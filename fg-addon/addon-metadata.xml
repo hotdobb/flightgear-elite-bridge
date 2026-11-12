@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PropertyList>
+  <meta>
+    <file-type type="string">FlightGear add-on metadata</file-type>
+    <format-version type="int">1</format-version>
+  </meta>
+  <addon>
+    <identifier type="string">org.eliteprj.bruecke</identifier>
+    <name type="string">Elite Bruecke</name>
+    <version type="string">0.1.0</version>
+    <authors>
+      <author>
+        <name type="string">ElitePrj</name>
+      </author>
+    </authors>
+    <short-description type="string">Setzt die Schalter des Elite Pro Panel II (aus elite_fg.py) auf die Properties des Flugzeugs um.</short-description>
+    <min-FG-version type="string">2020.3.0</min-FG-version>
+  </addon>
+</PropertyList>

@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!--
+  FlightGear "generic protocol" AUSGABE fuer die Elite-Bruecke (elite_fg.py).
+  Gehoert nach $FG_ROOT/Protocol/elite_aus.xml, Start mit:
+    - -generic=socket,out,10,127.0.0.1,5011,udp,elite_aus
+  Eine Zeile pro Paket, Frequenzen in MHz, durch Komma getrennt.
+  Reihenfolge muss zu AUSGABE in elite_fg.py passen.
+-->
+<PropertyList>
+  <generic>
+    <output>
+      <line_separator>newline</line_separator>
+      <var_separator>,</var_separator>
+
+      <chunk><name>COM1 aktiv</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/comm[0]/frequencies/selected-mhz</node></chunk>
+      <chunk><name>COM1 standby</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/comm[0]/frequencies/standby-mhz</node></chunk>
+      <chunk><name>COM2 aktiv</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/comm[1]/frequencies/selected-mhz</node></chunk>
+      <chunk><name>COM2 standby</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/comm[1]/frequencies/standby-mhz</node></chunk>
+      <chunk><name>NAV1 aktiv</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/nav[0]/frequencies/selected-mhz</node></chunk>
+      <chunk><name>NAV1 standby</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/nav[0]/frequencies/standby-mhz</node></chunk>
+      <chunk><name>NAV2 aktiv</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/nav[1]/frequencies/selected-mhz</node></chunk>
+      <chunk><name>NAV2 standby</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/nav[1]/frequencies/standby-mhz</node></chunk>
+      <chunk><name>ADF aktiv</name><type>float</type><format>%.1f</format>
+        <node>/instrumentation/adf[0]/frequencies/selected-khz</node></chunk>
+      <chunk><name>ADF standby</name><type>float</type><format>%.1f</format>
+        <node>/instrumentation/adf[0]/frequencies/standby-khz</node></chunk>
+      <chunk><name>Transponder-Code</name><type>int</type>
+        <node>/instrumentation/transponder/id-code</node></chunk>
+      <chunk><name>Transponder-Modus</name><type>int</type>
+        <node>/instrumentation/transponder/inputs/knob-mode</node></chunk>
+      <!-- Autopilot Century III (Seneca) -->
+      <chunk><name>AP Roll</name><type>int</type>
+        <node>/autopilot/CENTURYIII/controls/roll/button-state</node></chunk>
+      <chunk><name>AP Pitch</name><type>int</type>
+        <node>/autopilot/CENTURYIII/controls/pitch/button-state</node></chunk>
+      <chunk><name>AP Alt</name><type>int</type>
+        <node>/autopilot/CENTURYIII/controls/alt/button-state</node></chunk>
+      <chunk><name>AP Modus</name><type>int</type>
+        <node>/autopilot/CENTURYIII/controls/mode</node></chunk>
+      <chunk><name>AP GS erfasst</name><type>int</type>
+        <node>/autopilot/CENTURYIII/settings/gs-captured</node></chunk>
+      <chunk><name>AP HDG-Schalter</name><type>int</type>
+        <node>/autopilot/CENTURYIII/controls/hdg/button-state</node></chunk>
+      <!-- DME -->
+      <chunk><name>DME eigene Frequenz</name><type>float</type><format>%.3f</format>
+        <node>/instrumentation/dme/frequencies/selected-mhz</node></chunk>
+      <chunk><name>DME Entfernung</name><type>float</type><format>%.2f</format>
+        <node>/instrumentation/dme/indicated-distance-nm</node></chunk>
+      <chunk><name>DME Geschwindigkeit</name><type>float</type><format>%.1f</format>
+        <node>/instrumentation/dme/indicated-ground-speed-kt</node></chunk>
+      <chunk><name>DME Zeit</name><type>float</type><format>%.1f</format>
+        <node>/instrumentation/dme/indicated-time-min</node></chunk>
+      <chunk><name>DME in Reichweite</name><type>int</type>
+        <node>/instrumentation/dme/in-range</node></chunk>
+      <!-- Fahrwerk: Bug, links, rechts (0 = eingefahren, 1 = ausgefahren) -->
+      <chunk><name>Fahrwerk Bug</name><type>float</type><format>%.2f</format>
+        <node>/gear/gear[0]/position-norm</node></chunk>
+      <chunk><name>Fahrwerk links</name><type>float</type><format>%.2f</format>
+        <node>/gear/gear[1]/position-norm</node></chunk>
+      <chunk><name>Fahrwerk rechts</name><type>float</type><format>%.2f</format>
+        <node>/gear/gear[2]/position-norm</node></chunk>
+      <!-- Marker-Lampen (blinken schon in FlightGear): aeusseres, mittleres, inneres Zeichen -->
+      <chunk><name>Marker aussen</name><type>int</type>
+        <node>/instrumentation/marker-beacon/outer</node></chunk>
+      <chunk><name>Marker Mitte</name><type>int</type>
+        <node>/instrumentation/marker-beacon/middle</node></chunk>
+      <chunk><name>Marker innen</name><type>int</type>
+        <node>/instrumentation/marker-beacon/inner</node></chunk>
+      <!-- Trimm-Servo des Autopiloten laeuft (vom Add-on erkannt) -->
+      <chunk><name>AP trimmt</name><type>int</type>
+        <node>/elite/ap-trimmt</node></chunk>
+      <!-- ADF-Anzeige (vom Add-on): Schriftzuege als Bits (1 ADF, 2 ANT, 4 BFO, 8 FRQ,
+           16 FLT, 32 ET) und die Zahl im rechten Block (Standby-kHz oder Zeit mmss) -->
+      <chunk><name>ADF Schriftzuege</name><type>int</type>
+        <node>/elite/adf-anzeige</node></chunk>
+      <chunk><name>ADF rechts</name><type>int</type>
+        <node>/elite/adf-rechts</node></chunk>
+    </output>
+  </generic>
+</PropertyList>

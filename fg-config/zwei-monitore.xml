@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!--
+  Heimcockpit mit zwei Monitoren (Seneca II):
+    - Fenster "Instrumente": flaches Elite-Instrumentenbrett (Panels/elite-panel.xml,
+      erzeugt von seneca_elite.py), dazu die Menues
+    - Fenster "Aussensicht": Vollbild, ohne Cockpit
+  Einschalten im Launcher unter "Zusaetzliche Einstellungen":
+    - -config=C:\ElitePrj\fg-config\zwei-monitore.xml
+  screen = Nummer des Monitors (0, 1, ...); x/y/width/height in Pixeln auf diesem Monitor.
+  Monitore (ab 2026-10-30): screen 0 = LG (quer, Hauptbildschirm) = Aussensicht,
+  screen 1 = Anmite 16 Zoll (1920x1200, unter dem LG) = Instrumente, beide Vollbild.
+  (Vorher Test mit BenQ hochkant: dort war der LG ebenfalls screen 0.)
+  Das Brett ist 1024 x 640 Einheiten gross und fuellt so ein 16:10-Fenster genau.
+-->
+<PropertyList>
+  <sim>
+    <model>
+      <!-- Seneca ohne Armaturenbrett (erzeugt von seneca_elite.py) -->
+      <path>Aircraft/SenecaII/Models/SenecaII-Aussen.xml</path>
+    </model>
+    <panel>
+      <path>Aircraft/SenecaII/Panels/elite-panel.xml</path>
+      <visibility type="bool">true</visibility>
+      <x-offset type="int">0</x-offset>
+      <!-- Instrumente immer zeigen, auch beim Umschauen und in anderen Ansichten -->
+      <hide-nonzero-view type="bool">false</hide-nonzero-view>
+      <hide-nonzero-heading-offset type="bool">false</hide-nonzero-heading-offset>
+    </panel>
+    <rendering>
+      <camera-group>
+        <camera>
+          <window>
+            <name type="string">Aussensicht</name>
+            <screen type="int">0</screen>
+            <fullscreen type="bool">true</fullscreen>
+          </window>
+          <view>
+            <heading-deg type="double">0</heading-deg>
+            <!-- etwas hoeher blicken: ohne Armaturenbrett saehe man sonst in die Nase -->
+            <pitch-deg type="double">8</pitch-deg>
+          </view>
+        </camera>
+        <camera>
+          <window>
+            <name type="string">Instrumente</name>
+            <screen type="int">1</screen>
+            <fullscreen type="bool">true</fullscreen>
+          </window>
+          <view>
+            <heading-deg type="double">0</heading-deg>
+          </view>
+        </camera>
+        <gui>
+          <window>
+            <name type="string">Instrumente</name>
+          </window>
+        </gui>
+      </camera-group>
+    </rendering>
+  </sim>
+</PropertyList>

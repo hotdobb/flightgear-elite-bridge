@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<!--
+  FlightGear "generic protocol" fuer die Elite-Bruecke (elite_fg.py).
+  Gehoert nach $FG_ROOT/Protocol/elite.xml, Start mit:
+    - -generic=socket,in,30,127.0.0.1,5010,udp,elite
+  Eine Zeile pro Paket, Werte 0..1, durch Komma getrennt.
+-->
+<PropertyList>
+  <generic>
+    <input>
+      <line_separator>newline</line_separator>
+      <var_separator>,</var_separator>
+
+      <chunk>
+        <name>Gas links</name>
+        <type>float</type>
+        <node>/controls/engines/engine[0]/throttle</node>
+      </chunk>
+      <chunk>
+        <name>Gas rechts</name>
+        <type>float</type>
+        <node>/controls/engines/engine[1]/throttle</node>
+      </chunk>
+      <chunk>
+        <name>Propeller links</name>
+        <type>float</type>
+        <node>/controls/engines/engine[0]/propeller-pitch</node>
+      </chunk>
+      <chunk>
+        <name>Propeller rechts</name>
+        <type>float</type>
+        <node>/controls/engines/engine[1]/propeller-pitch</node>
+      </chunk>
+      <chunk>
+        <name>Gemisch links</name>
+        <type>float</type>
+        <node>/controls/engines/engine[0]/mixture</node>
+      </chunk>
+      <chunk>
+        <name>Gemisch rechts</name>
+        <type>float</type>
+        <node>/controls/engines/engine[1]/mixture</node>
+      </chunk>
+      <!-- C172P liest das Gemisch nur hier; bei Zweimots harmlos -->
+      <chunk>
+        <name>Gemisch C172P</name>
+        <type>float</type>
+        <node>/controls/engines/current-engine/mixture</node>
+      </chunk>
+
+      <!-- Ruderpedale -->
+      <chunk>
+        <name>Seitenruder</name>
+        <type>float</type>
+        <node>/controls/flight/rudder</node>
+      </chunk>
+      <chunk>
+        <name>Bremse links</name>
+        <type>float</type>
+        <node>/controls/gear/brake-left</node>
+      </chunk>
+      <chunk>
+        <name>Bremse rechts</name>
+        <type>float</type>
+        <node>/controls/gear/brake-right</node>
+      </chunk>
+
+      <!-- Pro Panel: Trimmknopf -->
+      <chunk>
+        <name>Rudertrimmung</name>
+        <type>float</type>
+        <node>/controls/flight/rudder-trim</node>
+      </chunk>
+
+      <!-- Steuerhorn: das Add-on gibt es weiter, solange der Autopilot die Achse
+           nicht selbst steuert -->
+      <chunk>
+        <name>Querruder</name>
+        <type>float</type>
+        <node>/elite/input/querruder</node>
+      </chunk>
+      <chunk>
+        <name>Hoehenruder</name>
+        <type>float</type>
+        <node>/elite/input/hoehenruder</node>
+      </chunk>
+
+      <!-- Pro Panel: Schalter; fg-addon/addon-main.nas setzt sie aufs Flugzeug um.
+           Reihenfolge wie SCHALTER in elite_fg.py. -->
+      <chunk><name>batterie</name><type>int</type><node>/elite/input/batterie</node></chunk>
+      <chunk><name>radio</name><type>int</type><node>/elite/input/radio</node></chunk>
+      <chunk><name>pitot</name><type>int</type><node>/elite/input/pitot</node></chunk>
+      <chunk><name>parkbremse</name><type>int</type><node>/elite/input/parkbremse</node></chunk>
+      <chunk><name>fahrwerk</name><type>int</type><node>/elite/input/fahrwerk</node></chunk>
+      <chunk><name>lima-l</name><type>int</type><node>/elite/input/lima-l</node></chunk>
+      <chunk><name>lima-r</name><type>int</type><node>/elite/input/lima-r</node></chunk>
+      <chunk><name>pumpe-l</name><type>int</type><node>/elite/input/pumpe-l</node></chunk>
+      <chunk><name>pumpe-r</name><type>int</type><node>/elite/input/pumpe-r</node></chunk>
+      <chunk><name>mag-0-l</name><type>int</type><node>/elite/input/mag-0-l</node></chunk>
+      <chunk><name>mag-0-r</name><type>int</type><node>/elite/input/mag-0-r</node></chunk>
+      <chunk><name>mag-1-l</name><type>int</type><node>/elite/input/mag-1-l</node></chunk>
+      <chunk><name>mag-1-r</name><type>int</type><node>/elite/input/mag-1-r</node></chunk>
+      <chunk><name>anlasser-0</name><type>int</type><node>/elite/input/anlasser-0</node></chunk>
+      <chunk><name>anlasser-1</name><type>int</type><node>/elite/input/anlasser-1</node></chunk>
+      <chunk><name>nav</name><type>int</type><node>/elite/input/nav</node></chunk>
+      <chunk><name>strobe</name><type>int</type><node>/elite/input/strobe</node></chunk>
+      <chunk><name>landing</name><type>int</type><node>/elite/input/landing</node></chunk>
+      <chunk><name>tankwahl</name><type>int</type><node>/elite/input/tankwahl</node></chunk>
+      <chunk><name>klappen</name><type>int</type><node>/elite/input/klappen</node></chunk>
+      <chunk><name>cowl-0</name><type>int</type><node>/elite/input/cowl-0</node></chunk>
+      <chunk><name>cowl-1</name><type>int</type><node>/elite/input/cowl-1</node></chunk>
+      <chunk><name>hoehentrimm</name><type>float</type><node>/elite/input/hoehentrimm</node></chunk>
+      <chunk><name>alt-static</name><type>int</type><node>/elite/input/alt-static</node></chunk>
+      <chunk><name>reserve</name><type>int</type><node>/elite/input/reserve</node></chunk>
+      <chunk><name>sprechtaste</name><type>int</type><node>/elite/input/sprechtaste</node></chunk>
+      <chunk><name>cws</name><type>int</type><node>/elite/input/cws</node></chunk>
+
+      <!-- AP-3000: Zaehler fuer Drehknoepfe und Tausch-Tasten (Reihenfolge wie ZAEHLER
+           in elite_fg.py); das Add-on wendet jeweils die Differenz an.
+           ap-sitzung aendert sich bei jedem Start der Bruecke. -->
+      <chunk><name>ap-sitzung</name><type>int</type><node>/elite/input/ap-sitzung</node></chunk>
+      <chunk><name>com1-grob</name><type>int</type><node>/elite/input/com1-grob</node></chunk>
+      <chunk><name>com1-fein</name><type>int</type><node>/elite/input/com1-fein</node></chunk>
+      <chunk><name>com2-grob</name><type>int</type><node>/elite/input/com2-grob</node></chunk>
+      <chunk><name>com2-fein</name><type>int</type><node>/elite/input/com2-fein</node></chunk>
+      <chunk><name>nav1-grob</name><type>int</type><node>/elite/input/nav1-grob</node></chunk>
+      <chunk><name>nav1-fein</name><type>int</type><node>/elite/input/nav1-fein</node></chunk>
+      <chunk><name>nav2-grob</name><type>int</type><node>/elite/input/nav2-grob</node></chunk>
+      <chunk><name>nav2-fein</name><type>int</type><node>/elite/input/nav2-fein</node></chunk>
+      <chunk><name>adf-grob</name><type>int</type><node>/elite/input/adf-grob</node></chunk>
+      <chunk><name>adf-fein</name><type>int</type><node>/elite/input/adf-fein</node></chunk>
+      <chunk><name>com1-tausch</name><type>int</type><node>/elite/input/com1-tausch</node></chunk>
+      <chunk><name>com2-tausch</name><type>int</type><node>/elite/input/com2-tausch</node></chunk>
+      <chunk><name>nav1-tausch</name><type>int</type><node>/elite/input/nav1-tausch</node></chunk>
+      <chunk><name>nav2-tausch</name><type>int</type><node>/elite/input/nav2-tausch</node></chunk>
+      <chunk><name>adf-tausch</name><type>int</type><node>/elite/input/adf-tausch</node></chunk>
+      <chunk><name>xpdr-0</name><type>int</type><node>/elite/input/xpdr-0</node></chunk>
+      <chunk><name>xpdr-1</name><type>int</type><node>/elite/input/xpdr-1</node></chunk>
+      <chunk><name>xpdr-2</name><type>int</type><node>/elite/input/xpdr-2</node></chunk>
+      <chunk><name>xpdr-3</name><type>int</type><node>/elite/input/xpdr-3</node></chunk>
+      <chunk><name>ap-eng</name><type>int</type><node>/elite/input/ap-eng</node></chunk>
+      <chunk><name>ap-hdg</name><type>int</type><node>/elite/input/ap-hdg</node></chunk>
+      <chunk><name>ap-nav</name><type>int</type><node>/elite/input/ap-nav</node></chunk>
+      <chunk><name>ap-apr</name><type>int</type><node>/elite/input/ap-apr</node></chunk>
+      <chunk><name>ap-bc</name><type>int</type><node>/elite/input/ap-bc</node></chunk>
+      <chunk><name>ap-alt</name><type>int</type><node>/elite/input/ap-alt</node></chunk>
+      <chunk><name>ap-fd</name><type>int</type><node>/elite/input/ap-fd</node></chunk>
+      <chunk><name>hdg</name><type>int</type><node>/elite/input/hdg</node></chunk>
+      <chunk><name>crs</name><type>int</type><node>/elite/input/crs</node></chunk>
+      <chunk><name>dme-grob</name><type>int</type><node>/elite/input/dme-grob</node></chunk>
+      <chunk><name>dme-fein</name><type>int</type><node>/elite/input/dme-fein</node></chunk>
+      <chunk><name>mdi</name><type>int</type><node>/elite/input/mdi</node></chunk>
+      <chunk><name>obs2</name><type>int</type><node>/elite/input/obs2</node></chunk>
+      <chunk><name>qnh</name><type>int</type><node>/elite/input/qnh</node></chunk>
+      <chunk><name>freeze</name><type>int</type><node>/elite/input/freeze</node></chunk>
+      <chunk><name>nick</name><type>int</type><node>/elite/input/nick</node></chunk>
+      <!-- ADF-Reihe: Tasten ADF (ADF/ANT), BFO, FLT (FLT/ET), SET (Zeit zuruecksetzen), IDENT -->
+      <chunk><name>adf-modus</name><type>int</type><node>/elite/input/adf-modus</node></chunk>
+      <chunk><name>adf-bfo</name><type>int</type><node>/elite/input/adf-bfo</node></chunk>
+      <chunk><name>adf-flt</name><type>int</type><node>/elite/input/adf-flt</node></chunk>
+      <chunk><name>adf-set</name><type>int</type><node>/elite/input/adf-set</node></chunk>
+      <chunk><name>adf-ident</name><type>int</type><node>/elite/input/adf-ident</node></chunk>
+      <!-- Transponder-Modus als FlightGear knob-mode (-1 = Schalter unbekannt), IDENT -->
+      <chunk><name>xpdr-modus</name><type>int</type><node>/elite/input/xpdr-modus</node></chunk>
+      <chunk><name>xpdr-ident</name><type>int</type><node>/elite/input/xpdr-ident</node></chunk>
+      <!-- weisse Wippe am AP-3000: -1 rauf, 0 Ruhe, +1 runter -->
+      <chunk><name>ap-trimm</name><type>int</type><node>/elite/input/ap-trimm</node></chunk>
+      <!-- DME-Quelle: 0 aus, 1 NAV1, 2 eigene Frequenz, 3 NAV2, -1 unbekannt -->
+      <chunk><name>dme-quelle</name><type>int</type><node>/elite/input/dme-quelle</node></chunk>
+      <!-- Umkehrschub Gas links/rechts (Hebel hinter der Raste): 1 = Reverser ein;
+           die Staerke steht dann im throttle -->
+      <chunk><name>umkehr-0</name><type>int</type><node>/elite/input/umkehr-0</node></chunk>
+      <chunk><name>umkehr-1</name><type>int</type><node>/elite/input/umkehr-1</node></chunk>
+      <!-- OFF-Taster COM/NAV 1 und 2 am AP-3000: 1 = Funkgeraet an, -1 = aus -->
+      <chunk><name>funk-an-0</name><type>int</type><node>/elite/input/funk-an-0</node></chunk>
+      <chunk><name>funk-an-1</name><type>int</type><node>/elite/input/funk-an-1</node></chunk>
+    </input>
+  </generic>
+</PropertyList>

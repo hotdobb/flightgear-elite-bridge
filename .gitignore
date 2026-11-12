@@ -1,0 +1,19 @@
+# Persoenliches: Kalibrierung, Schalterzustaende, Ersatzteil-Notizen
+einstellungen.json
+zustand.json
+links-ersatzteile.md
+
+# wird beim FlightGear-Start passend zu den Monitoren erzeugt
+fg-config/zwei-monitore-aktuell.xml
+
+# Messprotokolle, Mitschriften, Fotos, Arbeitsdateien
+*.log
+*.jpg
+*.jpeg
+*.png
+*.heic
+_tmp/
+
+# Python
+__pycache__/
+*.pyc
