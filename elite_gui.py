@@ -95,10 +95,11 @@ class DISPLAY_DEVICE(ctypes.Structure):
                 ("DeviceID", ctypes.c_wchar * 128), ("DeviceKey", ctypes.c_wchar * 128)]
 
 
-def monitore_pixel():
+def monitore_pixel(mit_namen=False):
     """Angeschlossene Monitore in Windows-Reihenfolge (= FlightGear screen 0, 1, ...):
     [(x, y, breite, hoehe, ist_hauptmonitor)] in echten Pixeln, unabhaengig von der
-    Skalierung; x/y = Lage auf dem Windows-Desktop."""
+    Skalierung; x/y = Lage auf dem Windows-Desktop. Mit mit_namen haengt als sechster Wert
+    der Windows-Name an (z. B. "\\\\.\\DISPLAY2")."""
     liste, nr = [], 0
     geraet = DISPLAY_DEVICE()
     geraet.cb = ctypes.sizeof(geraet)
@@ -109,18 +110,62 @@ def monitore_pixel():
         modus = DEVMODE()
         modus.dmSize = ctypes.sizeof(modus)
         if ctypes.windll.user32.EnumDisplaySettingsW(geraet.DeviceName, -1, ctypes.byref(modus)):
-            liste.append((modus.dmPositionX, modus.dmPositionY, modus.dmPelsWidth,
-                          modus.dmPelsHeight, bool(geraet.StateFlags & 4)))
+            eintrag = (modus.dmPositionX, modus.dmPositionY, modus.dmPelsWidth,
+                       modus.dmPelsHeight, bool(geraet.StateFlags & 4))
+            liste.append(eintrag + (geraet.DeviceName,) if mit_namen else eintrag)
     return liste
+
+
+# Vom Nutzer gewaehlte Monitore als FlightGear-Nummer (screen 0, 1, ...); None = automatisch:
+# Aussensicht auf dem Windows-Hauptbildschirm, Instrumente auf dem 16:10-Monitor.
+MONITOR_WAHL = {"aussen": None, "instrumente": None}
+
+
+def monitor_texte():
+    """Beschriftung je Monitor fuer die Auswahl, in FlightGear-Reihenfolge. Ohne Nummern:
+    Die Zahlen aus Windows ("Identifizieren") stimmen nicht mit der Reihenfolge ueberein,
+    in der FlightGear die Monitore zaehlt - deshalb Groesse und Lage."""
+    liste = monitore_pixel(mit_namen=True)
+    haupt = next((m for m in liste if m[4]), None)
+    texte = []
+    for x, y, breite, hoehe, primaer, name in liste:
+        if primaer or haupt is None:
+            lage = "Hauptbildschirm"
+        else:
+            # wo er laut Windows-Anordnung liegt, vom Hauptbildschirm aus gesehen
+            dx = (x + breite / 2) - (haupt[0] + haupt[2] / 2)
+            dy = (y + hoehe / 2) - (haupt[1] + haupt[3] / 2)
+            teile = []
+            if abs(dx) > haupt[2] / 2:
+                teile.append("rechts" if dx > 0 else "links")
+            if abs(dy) > haupt[3] / 2:
+                teile.append("unten" if dy > 0 else "oben")
+            lage = " ".join(teile) or "daneben"
+        texte.append(f"{breite} x {hoehe}, {lage}")
+    return texte
+
+
+def aussen_monitor(liste=None):
+    """FlightGear-Nummer des Monitors fuer die Aussensicht."""
+    liste = monitore_pixel() if liste is None else liste
+    wahl = MONITOR_WAHL["aussen"]
+    if wahl is not None and 0 <= wahl < len(liste):
+        return wahl
+    return next((nr for nr, m in enumerate(liste) if m[4]), 0)
 
 
 def instrumenten_fenster():
     """Wo das Fenster "Instrumente" auf dem zweiten Monitor liegt: (screen, x, y, breite,
     hoehe, vollbild) mit x/y relativ zu diesem Monitor, dazu dessen Lage (mx, my) auf dem
     Desktop; None ohne zweiten Monitor."""
-    zweite = [(nr, m) for nr, m in enumerate(monitore_pixel()) if not m[4]]
+    liste = monitore_pixel()
+    aussen = aussen_monitor(liste)
+    zweite = [(nr, m) for nr, m in enumerate(liste) if nr != aussen]
     if not zweite:
         return None
+    wahl = MONITOR_WAHL["instrumente"]
+    if wahl is not None and wahl != aussen and 0 <= wahl < len(liste):
+        zweite = [(wahl, liste[wahl])]
     # bei mehreren: der 16:10-Monitor (Anmite, Touch) passt genau zum Instrumentenbrett
     zweite.sort(key=lambda eintrag: abs(eintrag[1][2] / eintrag[1][3] - 1.6) > 0.02)
     nr, (mx, my, breite, hoehe, _) = zweite[0]
@@ -173,14 +218,21 @@ def schreibe_monitor_konfig(cockpit="elite"):
         text = f.read()
     if cockpit == "original":
         text = text.replace(MODELL_AUSSEN, "")
+    # Aussensicht: Hauptbildschirm oder der gewaehlte Monitor
+    aussen = aussen_monitor()
+    text = text.replace('<name type="string">Aussensicht</name>\n'
+                        '            <screen type="int">0</screen>',
+                        '<name type="string">Aussensicht</name>\n'
+                        f'            <screen type="int">{aussen}</screen>')
     meldung = "Instrumente: Vollbild auf Monitor 2"
     fenster = instrumenten_fenster()
     if fenster and FENSTER_VOLLBILD in text:
         nr, x, y, b, h, vollbild = fenster[:6]
         if vollbild:
             meldung = f"Instrumente: Vollbild auf Monitor {nr + 1}"
-            text = text.replace('<screen type="int">1</screen>\n            <fullscreen',
-                                f'<screen type="int">{nr}</screen>\n            <fullscreen')
+            # nur im Fenster "Instrumente" (die Aussensicht kann auch screen 1 sein)
+            text = text.replace(FENSTER_VOLLBILD, FENSTER_VOLLBILD.replace(
+                '<screen type="int">1</screen>', f'<screen type="int">{nr}</screen>'))
         else:
             text = text.replace(FENSTER_VOLLBILD, FENSTER_EINGEPASST.format(
                 screen=nr, x=x, y=y, breite=b, hoehe=h))
@@ -243,7 +295,7 @@ class Fenster:
         self.auto_kal = None   # waehrend "Automatisch kalibrieren": Mitte, Min, Max
 
         wurzel.title("Elite-Bruecke")
-        wurzel.geometry("1200x700")
+        wurzel.geometry("1200x800")
         wurzel.protocol("WM_DELETE_WINDOW", self.schliessen)
         self.baue_kopf()
         reiter = ttk.Notebook(wurzel)
@@ -702,11 +754,31 @@ class Fenster:
             knopf.pack(anchor="w")
             if nr == 3:
                 knopf.state(["disabled"])
+        # Welcher Monitor was zeigt (gilt fuer "2 Monitore"); "Automatisch" = Aussensicht auf
+        # dem Windows-Hauptbildschirm, Instrumente auf dem 16:10-Monitor
+        self.monitor_wahl = {}
+        for schluessel, titel in (("aussen", "Aussensicht auf:"),
+                                  ("instrumente", "Instrumente auf:")):
+            zeile = ttk.Frame(feld)
+            zeile.pack(anchor="w", pady=(4, 0))
+            ttk.Label(zeile, text=titel, width=16).pack(side="left")
+            wahl = ttk.Combobox(zeile, state="readonly", width=42)
+            wahl.configure(postcommand=self.monitor_wahl_fuellen)
+            wahl.bind("<<ComboboxSelected>>", lambda _e: self.monitor_wahl_uebernehmen())
+            wahl.pack(side="left")
+            self.monitor_wahl[schluessel] = wahl
+        self.monitor_wahl_fuellen()
         ttk.Label(feld, text="Cockpit der Seneca:").pack(anchor="w", pady=(6, 0))
         self.cockpit = tk.StringVar(value=self.start.get("cockpit", "elite"))
         for wert, titel in COCKPIT.items():
             ttk.Radiobutton(feld, text=titel, value=wert, variable=self.cockpit,
                             command=self.fg_vorschau).pack(anchor="w")
+        # KI-Verkehr: an grossen Flughaefen hunderte KI-Flugzeuge (Zuerich: 327), die in jedem
+        # Fenster mitgezeichnet werden -> Bildrate halbiert (gemessen 2026-11-16: 15 statt 31)
+        self.ki_verkehr = tk.BooleanVar(value=self.start.get("ki_verkehr", False))
+        ttk.Checkbutton(feld, text="KI-Verkehr (belebte Flughaefen, kostet viel Bildrate)",
+                        variable=self.ki_verkehr, command=self.fg_vorschau
+                        ).pack(anchor="w", pady=(6, 0))
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
         ttk.Button(zeile, text="FlightGear starten", command=self.starte_fg).pack(side="left")
@@ -777,6 +849,25 @@ class Fenster:
         self.vorschau.pack(fill="x")
         self.fg_vorschau()
 
+    def monitor_wahl_fuellen(self):
+        """Auswahllisten mit den gerade angeschlossenen Monitoren fuellen; die gespeicherte
+        Wahl (FlightGear-Nummer) bleibt, solange es den Monitor gibt."""
+        texte = ["Automatisch"] + monitor_texte()
+        for schluessel, wahl in self.monitor_wahl.items():
+            nr = self.start.get("monitor_" + schluessel)
+            if nr is None or not 0 <= nr < len(texte) - 1:
+                nr = None
+            MONITOR_WAHL[schluessel] = nr
+            wahl.configure(values=texte)
+            wahl.current(0 if nr is None else nr + 1)
+
+    def monitor_wahl_uebernehmen(self):
+        for schluessel, wahl in self.monitor_wahl.items():
+            nr = wahl.current() - 1
+            self.start["monitor_" + schluessel] = MONITOR_WAHL[schluessel] = \
+                None if nr < 0 else nr
+        self.monitor_geprueft = 0.0      # Navi und Bordcomputer gleich mit umziehen
+
     def fg_befehl(self):
         befehl = [self.fgfs.get(), "--launcher",
                   "--generic=socket,in,30,127.0.0.1,5010,udp,elite",
@@ -784,6 +875,7 @@ class Fenster:
                   "--addon=" + os.path.join(ORDNER, "fg-addon")]
         if self.httpd.get():
             befehl.append("--httpd=8080")
+        befehl.append("--enable-ai-traffic" if self.ki_verkehr.get() else "--disable-ai-traffic")
         konfig = MONITORE[self.monitore.get()][1]
         if konfig:
             # starte_fg schreibt diese Datei passend zum angeschlossenen Monitor
@@ -793,6 +885,7 @@ class Fenster:
 
     def fg_vorschau(self):
         self.start.update(monitore=self.monitore.get(), cockpit=self.cockpit.get(),
+                          ki_verkehr=self.ki_verkehr.get(),
                           httpd=self.httpd.get(),
                           bruecke_automatisch=self.auto.get(), fgfs=self.fgfs.get(),
                           zusatz=self.zusatz.get("1.0", "end").strip())

@@ -122,6 +122,55 @@ def erzeuge_aussensicht(elite_modell):
     print(f"Aussensicht: {len(entfernt)} Instrumente/Teile vorne entfernt.")
 
 
+# --- Apollo-Display an der Stelle des Garmin GPS155: eine flache Flaeche "ApolloScreen"
+# (16 x 5 cm wie die Garmin-Front, Vorderseite zeigt nach hinten zum Piloten). Das Add-on
+# zeichnet darauf per Canvas den Inhalt des Elo-Displays (elite_gps.py).
+APOLLO_B, APOLLO_H, APOLLO_X = 0.08, 0.0254, 0.0045   # halbe Breite/Hoehe, Abstand vorne
+
+
+def leeres_png(pfad):
+    """Schwarzes 4x4-PNG (die Flaeche braucht eine Textur, Canvas ersetzt sie)."""
+    import struct
+    import zlib
+
+    def block(art, daten):
+        return (struct.pack(">I", len(daten)) + art + daten
+                + struct.pack(">I", zlib.crc32(art + daten) & 0xFFFFFFFF))
+    roh = b"".join(b"\0" + b"\0\0\0" * 4 for _ in range(4))
+    with open(pfad, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + block(b"IHDR", struct.pack(">IIBBBBB", 4, 4, 8, 2, 0, 0, 0))
+                + block(b"IDAT", zlib.compress(roh)) + block(b"IEND", b""))
+
+
+def erzeuge_apollo(ordner):
+    # AC3D: x wie FlightGear, y = FG-Hoehe, z = -FG-seitlich; Reihenfolge gegen den
+    # Uhrzeigersinn von hinten gesehen (unten links, unten rechts, oben rechts, oben links)
+    b, h, x = APOLLO_B, APOLLO_H, APOLLO_X
+    ecken = [(x, -h, b), (x, -h, -b), (x, h, -b), (x, h, b)]
+    schreibe(os.path.join(ordner, "apollo-elite.ac"), "AC3Db\n"
+             'MATERIAL "Bildschirm" rgb 1 1 1  amb 1 1 1  emis 0 0 0  spec 0 0 0  shi 0  trans 0\n'
+             "OBJECT world\nkids 1\nOBJECT poly\nname \"ApolloScreen\"\n"
+             'texture "apollo-leer.png"\nnumvert 4\n'
+             + "".join(f"{e[0]} {e[1]} {e[2]}\n" for e in ecken)
+             + "numsurf 1\nSURF 0x10\nmat 0\nrefs 4\n0 0 0\n1 1 0\n2 1 1\n3 0 1\nkids 0\n")
+    leeres_png(os.path.join(ordner, "apollo-leer.png"))
+    print("geschrieben:", os.path.join(ordner, "apollo-leer.png"))
+    schreibe(os.path.join(ordner, "apollo-elite.xml"), f"""<?xml version="1.0"?>
+{KOPF}<PropertyList>
+  <path>apollo-elite.ac</path>
+  <animation>
+    <type>noshadow</type>
+  </animation>
+  <!-- leuchtet selbst (Display), unabhaengig vom Licht im Cockpit -->
+  <animation>
+    <type>material</type>
+    <object-name>ApolloScreen</object-name>
+    <emission><red>1</red><green>1</green><blue>1</blue></emission>
+  </animation>
+</PropertyList>
+""")
+
+
 def verstecken(objekte):
     namen = "".join(f"    <object-name>{o}</object-name>\n" for o in objekte)
     return ("  <!-- Elite: Teile, die es als Hardware gibt -->\n"
@@ -184,6 +233,10 @@ def erzeuge():
         print("WARNUNG: verschoben nur:", ", ".join(verschoben))
     modell = modell.replace("Aircraft/SenecaII/Instruments-3d/SwitchPanel.xml",
                             "Aircraft/SenecaII/Instruments-3d/SwitchPanel-Elite.xml")
+    # Garmin GPS155 (nur Bild ohne Funktion) -> Apollo-Display gleicher Groesse
+    modell = modell.replace("Aircraft/SenecaII/Models/gps155.xml",
+                            "Aircraft/SenecaII/Models/apollo-elite.xml")
+    erzeuge_apollo(os.path.join(SENECA, "Models"))
     modell = vor_ende(modell, verstecken(OHNE_OBJEKTE))
     # Innenraum: Leder statt Karo-Stoff, Tuerverkleidungen (elite_innen.py)
     modell = elite_innen.modell_anpassen(modell)
@@ -620,6 +673,8 @@ def entferne():
         print("Normale Seneca wiederhergestellt.")
     for teil in (("SenecaII-elite-set.xml",), ("Models", "SenecaII-Elite.xml"),
                  ("Models", "SenecaII-Aussen.xml"),
+                 ("Models", "apollo-elite.ac"), ("Models", "apollo-elite.xml"),
+                 ("Models", "apollo-leer.png"),
                  ("Panels", "elite-panel.xml"),
                  *(("Panels", "Textures", schild_datei(t)) for _, t in WARNLAMPEN),
                  ("Panels", "Textures", COWL_BILD), ("Panels", "Textures", COWL_MARKE),

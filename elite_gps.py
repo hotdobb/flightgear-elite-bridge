@@ -219,12 +219,13 @@ class GpsFenster(tk.Toplevel):
             return
         if not self.an:
             return
-        if self.einzeln:
-            if name == "map":
-                self.karte_an = not self.karte_an
-                return
-            if name in ("nav", "nrst", "direct", "info", "soft1", "soft2"):
-                self.karte_an = False       # Seitentasten zeigen wieder den Text
+        # MAP wechselt zwischen Text und Karte (im Instrumentenbrett bzw. im 3D-Cockpit;
+        # auf dem eigenen Monitor sind Text und Karte ohnehin beide zu sehen)
+        if name == "map":
+            self.karte_an = not self.karte_an
+            return
+        if name in ("nav", "nrst", "direct", "info", "soft1", "soft2"):
+            self.karte_an = False           # Seitentasten zeigen wieder den Text
         if isinstance(name, tuple):
             art, schritt = name
             if self.seite in ("nrst", "direct", "info"):
@@ -247,7 +248,7 @@ class GpsFenster(tk.Toplevel):
             self.radius = min(len(RADIEN) - 1, self.radius + 1)
         elif name == "soft4":
             self.radius = max(0, self.radius - 1)
-        elif name in ("soft5", "map"):
+        elif name == "soft5":
             self.nord_oben = not self.nord_oben
         elif name == "direct":
             self.seite = "direct"
@@ -326,6 +327,7 @@ class GpsFenster(tk.Toplevel):
             self.taste(self.ereignisse.popleft())
         self.pruefe_monitor()
         self.pruefe_ziel()
+        self.sende_anzeige()
         self.zeichne()
         self.after(200, self.takt)
 
@@ -358,16 +360,47 @@ class GpsFenster(tk.Toplevel):
         # Schrift nach Zeilenhoehe, im schmalen hohen Feld aber nur so gross, dass zwei
         # Spalten nebeneinander passen
         groesse = min(zeile_h * 0.8, (dx1 - dx0) / 13.5)
-        schrift = ("Consolas", -int(groesse), "bold")
-        klein = ("Consolas", -int(groesse * 0.75), "bold")
+        schrift = {"g": ("Consolas", -int(groesse), "bold"),
+                   "k": ("Consolas", -int(groesse * 0.75), "bold")}
+        for teil in self.apollo_teile():
+            if teil[0] == "T":
+                _, spalte, zeile, farbe, s, anker, inhalt = teil
+                lw.create_text(dx0 + 14 + spalte * (dx1 - dx0 - 28),
+                               dy0 + zeile_h * (zeile + 0.6), text=inhalt,
+                               fill=SCHWARZ if farbe == "s" else BERNSTEIN, font=schrift[s],
+                               anchor=anker)
+            elif teil[0] == "B":
+                lw.create_rectangle(dx0 + 4, dy0 + zeile_h * (teil[1] + 0.1), dx1 - 4,
+                                    dy0 + zeile_h * (teil[1] + 1.1), fill=BERNSTEIN, outline="")
+            elif teil[0] == "G":
+                lw.create_rectangle(dx1 - 14 - zeile_h * 2.2, dy0 + zeile_h * 0.15,
+                                    dx1 - 6, dy0 + zeile_h * 1.05, fill=BERNSTEIN,
+                                    outline="")
+        # Bildschirmtasten 1-5 (auch per Touch)
+        breite = (dx1 - dx0) / len(SOFTKEYS)
+        oben = dy1 - zeile_h * 1.2
+        for i, (name, beschriftung) in enumerate(SOFTKEYS):
+            kx0, kx1 = dx0 + i * breite + 4, dx0 + (i + 1) * breite - 4
+            lw.create_rectangle(kx0, oben, kx1, dy1 - 4, outline=BERNSTEIN_DUNKEL)
+            lw.create_text((kx0 + kx1) / 2, (oben + dy1 - 4) / 2, text=beschriftung,
+                           fill=BERNSTEIN, font=schrift["k"])
+            self.flaechen.append((kx0, oben, kx1, dy1, name))
+        if self.einzeln:
+            # Touch auf die Anzeige selbst = MAP-Taste (nach den Bildschirmtasten pruefen)
+            self.flaechen.append((dx0, dy0, dx1, dy1, "map"))
 
-        def text(spalte, zeile, inhalt, farbe=BERNSTEIN, s=schrift, anker="w"):
-            lw.create_text(dx0 + 14 + spalte * (dx1 - dx0 - 28), dy0 + zeile_h * (zeile + 0.6),
-                           text=inhalt, fill=farbe, font=s, anchor=anker)
+    def apollo_teile(self):
+        """Inhalt des Apollo-Displays als Liste, gezeichnet hier und im 3D-Cockpit:
+        ("T", spalte 0..1, zeile 0..8, farbe b/s, groesse g/k, anker, text), ("B", zeile)
+        = Auswahlbalken, ("G",) = Feld hinter der GPS-Anzeige."""
+        teile = []
+
+        def text(spalte, zeile, inhalt, farbe=BERNSTEIN, s="g", anker="w"):
+            teile.append(("T", spalte, zeile, "s" if farbe == SCHWARZ else "b", s, anker,
+                          inhalt))
 
         def balken(zeile):
-            lw.create_rectangle(dx0 + 4, dy0 + zeile_h * (zeile + 0.1), dx1 - 4,
-                                dy0 + zeile_h * (zeile + 1.1), fill=BERNSTEIN, outline="")
+            teile.append(("B", zeile))
 
         daten = self.leser.aktuell()
         if not daten:
@@ -377,31 +410,37 @@ class GpsFenster(tk.Toplevel):
             if self.seite == "nav":
                 self.seite_nav(daten, magvar, text)
             else:
-                self.seite_liste(daten, magvar, text, klein, balken)
+                self.seite_liste(daten, magvar, text, "k", balken)
         if daten:
             # wem NAV1 (Kursinstrument, Autopilot) folgt
             if daten.get("quelle-gps"):
-                lw.create_rectangle(dx1 - 14 - zeile_h * 2.2, dy0 + zeile_h * 0.15,
-                                    dx1 - 6, dy0 + zeile_h * 1.05, fill=BERNSTEIN,
-                                    outline="")
-                text(1, 0, "GPS", SCHWARZ, klein, "e")
+                teile.append(("G",))
+                text(1, 0, "GPS", SCHWARZ, "k", "e")
             else:
-                text(1, 0, "VLOC", BERNSTEIN, klein, "e")
+                text(1, 0, "VLOC", BERNSTEIN, "k", "e")
         meldung, bis = self.meldung
         if meldung and time.monotonic() < bis:
-            text(0.62, 0, meldung, s=klein, anker="center")
-        # Bildschirmtasten 1-5 (auch per Touch)
-        teil = (dx1 - dx0) / len(SOFTKEYS)
-        oben = dy1 - zeile_h * 1.2
-        for i, (name, beschriftung) in enumerate(SOFTKEYS):
-            kx0, kx1 = dx0 + i * teil + 4, dx0 + (i + 1) * teil - 4
-            lw.create_rectangle(kx0, oben, kx1, dy1 - 4, outline=BERNSTEIN_DUNKEL)
-            lw.create_text((kx0 + kx1) / 2, (oben + dy1 - 4) / 2, text=beschriftung,
-                           fill=BERNSTEIN, font=klein)
-            self.flaechen.append((kx0, oben, kx1, dy1, name))
-        if self.einzeln:
-            # Touch auf die Anzeige selbst = MAP-Taste (nach den Bildschirmtasten pruefen)
-            self.flaechen.append((dx0, dy0, dx1, dy1, "map"))
+            text(0.62, 0, meldung, s="k", anker="center")
+        return teile
+
+    def sende_anzeige(self):
+        """Displayinhalt fuer das 3D-Cockpit (Add-on zeichnet ihn auf "ApolloScreen");
+        nur bei Aenderung, sonst alle 5 s (falls FlightGear neu gestartet wurde)."""
+        if not self.an:
+            inhalt = ""
+        elif self.karte_an:
+            # Pixel der Leinwand im Add-on (APOLLO_W x APOLLO_H), Schrift etwas groesser
+            inhalt = "\n".join("\t".join(f"{f:.1f}" if isinstance(f, float) else str(f)
+                                         for f in teil)
+                               for teil in self.karte_teile(0, 0, 1024, 320, f=1.4))
+        else:
+            zeilen = ["\t".join(str(f) for f in teil) for teil in self.apollo_teile()]
+            zeilen.append("\t".join(["K"] + [b for _, b in SOFTKEYS]))
+            inhalt = "\n".join(zeilen)
+        jetzt = time.monotonic()
+        if inhalt != getattr(self, "anzeige_alt", None) or jetzt - self.anzeige_zeit > 5:
+            self.anzeige_alt, self.anzeige_zeit = inhalt, jetzt
+            sende([("elite/gps/anzeige", inhalt)])
 
     def seite_nav(self, daten, magvar, text):
         gs = daten.get("gs-kt") or 0
@@ -460,82 +499,105 @@ class GpsFenster(tk.Toplevel):
 
     def zeichne_karte(self, x0, y0, x1, y1):
         lw = self.leinwand
-        lw.create_rectangle(x0, y0, x1, y1, fill=KARTE, outline="")
+        for teil in self.karte_teile(x0, y0, x1, y1):
+            art = teil[0]
+            if art == "H":
+                lw.create_rectangle(x0, y0, x1, y1, fill=teil[1], outline="")
+            elif art == "O":
+                _, cx, cy, r, farbe, gestrichelt, breite = teil
+                lw.create_oval(cx - r, cy - r, cx + r, cy + r, outline=farbe, width=breite,
+                               dash=(4, 4) if gestrichelt else None)
+            elif art == "F":
+                _, cx, cy, r, farbe = teil
+                lw.create_oval(cx - r, cy - r, cx + r, cy + r, fill=farbe, outline="")
+            elif art == "P":
+                lw.create_polygon(*teil[3:], fill=teil[1], outline=teil[2])
+            elif art == "L":
+                _, xa, ya, xb, yb, farbe, breite = teil
+                lw.create_line(xa, ya, xb, yb, fill=farbe, width=breite)
+            elif art == "X":
+                _, x, y, farbe, groesse, fett, anker, inhalt = teil
+                lw.create_text(x, y, text=inhalt, fill=farbe, anchor=anker,
+                               font=("Segoe UI", -int(groesse)) + (("bold",) if fett else ()))
+
+    def karte_teile(self, x0, y0, x1, y1, f=1.0):
+        """Karte als Liste einfacher Zeichenteile (Pixel im Feld x0..y1, f = Groesse von
+        Schrift und Symbolen), gezeichnet hier und im 3D-Cockpit:
+        ("H", farbe) Hintergrund, ("O", x, y, r, farbe, gestrichelt, breite) Kreis,
+        ("F", x, y, r, farbe) Punkt, ("P", fuellung, rand, x, y, ...) Vieleck,
+        ("L", x, y, x, y, farbe, breite) Linie, ("X", x, y, farbe, groesse, fett, anker, text)."""
+        teile = [("H", KARTE)]
         daten = self.leser.aktuell()
         mx = (x0 + x1) / 2
         my = (y0 + y1) / 2 if self.nord_oben else y0 + (y1 - y0) * 0.68
         radius_nm = RADIEN[self.radius]
-        massstab = (min(x1 - x0, y1 - y0) / 2 - 20) / radius_nm   # Pixel pro NM
-        schrift = ("Segoe UI", -16, "bold")
-        if daten:
-            lat0, lon0 = daten["lat"], daten["lon"]
-            trk = daten.get("trk-deg") or 0
-            drehung = 0 if self.nord_oben else math.radians(trk)
+        massstab = (min(x1 - x0, y1 - y0) / 2 - 20 * f) / radius_nm   # Pixel pro NM
+        if not daten:
+            teile.append(("X", mx, my, "#6f93b5", 16 * f, 1, "center",
+                          "keine Daten von FlightGear"))
+            return teile
+        lat0, lon0 = daten["lat"], daten["lon"]
+        trk = daten.get("trk-deg") or 0
+        drehung = 0 if self.nord_oben else math.radians(trk)
 
-            def punkt(lat, lon):
-                ost = (lon - lon0) * 60 * math.cos(math.radians(lat0))
-                nord = (lat - lat0) * 60
-                ost, nord = (ost * math.cos(drehung) - nord * math.sin(drehung),
-                             ost * math.sin(drehung) + nord * math.cos(drehung))
-                return mx + ost * massstab, my - nord * massstab
+        def punkt(lat, lon):
+            ost = (lon - lon0) * 60 * math.cos(math.radians(lat0))
+            nord = (lat - lat0) * 60
+            ost, nord = (ost * math.cos(drehung) - nord * math.sin(drehung),
+                         ost * math.sin(drehung) + nord * math.cos(drehung))
+            return mx + ost * massstab, my - nord * massstab
 
-            def sichtbar(x, y):
-                return x0 + 8 <= x <= x1 - 8 and y0 + 8 <= y <= y1 - 8
+        def sichtbar(x, y):
+            return x0 + 8 <= x <= x1 - 8 and y0 + 8 <= y <= y1 - 8
 
-            r = radius_nm * massstab
-            lw.create_oval(mx - r, my - r, mx + r, my + r, outline="#2c4a66")
-            lw.create_oval(mx - r / 2, my - r / 2, mx + r / 2, my + r / 2, outline="#2c4a66",
-                           dash=(4, 4))
-            lw.create_text(mx + r / 2 * 0.71 + 4, my - r / 2 * 0.71, text=f"{radius_nm / 2:g}",
-                           fill="#6f93b5", font=("Segoe UI", -14), anchor="sw")
-            umgebung = daten.get("umgebung") or {}
-            for nav in umgebung.get("nav") or []:
-                if not isinstance(nav, dict) or nav.get("lat") is None:
-                    continue
-                x, y = punkt(nav["lat"], nav["lon"])
-                if not sichtbar(x, y):
-                    continue
-                farbe = FARBE.get(nav.get("typ"), "#aaa")
-                if nav.get("typ") == "vor":
-                    lw.create_polygon(*[c for w in range(6) for c in (
-                        x + 8 * math.cos(w * math.pi / 3), y + 8 * math.sin(w * math.pi / 3))],
-                        outline=farbe, fill="")
-                else:
-                    lw.create_oval(x - 4, y - 4, x + 4, y + 4, fill=farbe, outline="")
-                lw.create_text(x + 10, y, text=nav.get("id", ""), fill=farbe,
-                               font=("Segoe UI", -13), anchor="w")
-            for apt in umgebung.get("apt") or []:
-                if not isinstance(apt, dict) or apt.get("lat") is None:
-                    continue
-                x, y = punkt(apt["lat"], apt["lon"])
-                if not sichtbar(x, y):
-                    continue
-                gross = (apt.get("piste") or 0) >= 4000
-                g = 7 if gross else 5
-                lw.create_oval(x - g, y - g, x + g, y + g, outline=FARBE["apt"], width=2)
-                lw.create_text(x + g + 3, y, text=apt.get("id", ""), fill=FARBE["apt"],
-                               font=schrift if gross else ("Segoe UI", -13), anchor="w")
-            if self.ziel:
-                x, y = punkt(self.ziel["lat"], self.ziel["lon"])
-                laenge = math.hypot(x - mx, y - my)
-                if laenge > r:   # am Kartenrand enden lassen
-                    x, y = mx + (x - mx) * r / laenge, my + (y - my) * r / laenge
-                lw.create_line(mx, my, x, y, fill=FARBE["ziel"], width=3)
-            # Flugzeug: zeigt in Flugrichtung
-            winkel = math.radians(trk) if self.nord_oben else 0
-            spitze = [(0, -16), (10, 12), (0, 6), (-10, 12)]
-            lw.create_polygon(*[c for px, py in spitze for c in (
-                mx + px * math.cos(winkel) - py * math.sin(winkel),
-                my + px * math.sin(winkel) + py * math.cos(winkel))],
-                fill="white", outline="black")
-            # Nordpfeil
-            nx, ny = x0 + 34, y0 + 34
-            lw.create_oval(nx - 22, ny - 22, nx + 22, ny + 22, outline="#6f93b5")
-            lw.create_text(nx + 22 * math.sin(-drehung), ny - 22 * math.cos(-drehung),
-                           text="N", fill="white", font=schrift)
-        else:
-            lw.create_text(mx, my, text="keine Daten von FlightGear", fill="#6f93b5",
-                           font=schrift)
+        r = radius_nm * massstab
+        teile.append(("O", mx, my, r, "#2c4a66", 0, 1))
+        teile.append(("O", mx, my, r / 2, "#2c4a66", 1, 1))
+        teile.append(("X", mx + r / 2 * 0.71 + 4, my - r / 2 * 0.71, "#6f93b5", 14 * f, 0, "sw",
+                      f"{radius_nm / 2:g}"))
+        umgebung = daten.get("umgebung") or {}
+        for nav in umgebung.get("nav") or []:
+            if not isinstance(nav, dict) or nav.get("lat") is None:
+                continue
+            x, y = punkt(nav["lat"], nav["lon"])
+            if not sichtbar(x, y):
+                continue
+            farbe = FARBE.get(nav.get("typ"), "#aaa")
+            if nav.get("typ") == "vor":
+                teile.append(("P", "", farbe, *[c for w in range(6) for c in (
+                    x + 8 * f * math.cos(w * math.pi / 3), y + 8 * f * math.sin(w * math.pi / 3))]))
+            else:
+                teile.append(("F", x, y, 4 * f, farbe))
+            teile.append(("X", x + 10 * f, y, farbe, 13 * f, 0, "w", nav.get("id", "")))
+        for apt in umgebung.get("apt") or []:
+            if not isinstance(apt, dict) or apt.get("lat") is None:
+                continue
+            x, y = punkt(apt["lat"], apt["lon"])
+            if not sichtbar(x, y):
+                continue
+            gross = (apt.get("piste") or 0) >= 4000
+            g = (7 if gross else 5) * f
+            teile.append(("O", x, y, g, FARBE["apt"], 0, 2))
+            teile.append(("X", x + g + 3, y, FARBE["apt"], (16 if gross else 13) * f, int(gross),
+                          "w", apt.get("id", "")))
+        if self.ziel:
+            x, y = punkt(self.ziel["lat"], self.ziel["lon"])
+            laenge = math.hypot(x - mx, y - my)
+            if laenge > r:   # am Kartenrand enden lassen
+                x, y = mx + (x - mx) * r / laenge, my + (y - my) * r / laenge
+            teile.append(("L", mx, my, x, y, FARBE["ziel"], 3))
+        # Flugzeug: zeigt in Flugrichtung
+        winkel = math.radians(trk) if self.nord_oben else 0
+        spitze = [(0, -16), (10, 12), (0, 6), (-10, 12)]
+        teile.append(("P", "white", "black", *[c for px, py in spitze for c in (
+            mx + f * (px * math.cos(winkel) - py * math.sin(winkel)),
+            my + f * (px * math.sin(winkel) + py * math.cos(winkel)))]))
+        # Nordpfeil
+        nx, ny, nr = x0 + 34 * f, y0 + 34 * f, 22 * f
+        teile.append(("O", nx, ny, nr, "#6f93b5", 0, 1))
+        teile.append(("X", nx + nr * math.sin(-drehung), ny - nr * math.cos(-drehung), "white",
+                      16 * f, 1, "center", "N"))
+        return teile
         # Touch-Knoepfe der Karte
         knoepfe = [("soft4", "+"), ("soft3", "-"), ("soft5", "N/TRK")]
         if self.einzeln:

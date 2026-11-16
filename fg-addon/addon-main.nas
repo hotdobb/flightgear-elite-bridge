@@ -413,6 +413,123 @@ var gps_start = func {
         var pfad = "/instrumentation/nav[0]/slaved-to-gps";
         setprop(pfad, !getprop(pfad));
     }, 0, 0);
+    apollo_start();
+};
+
+# Apollo-Display im 3D-Cockpit (Seneca Elite: Flaeche "ApolloScreen" statt des Garmin).
+# elite_gps.py schickt den Inhalt des Elo-Displays als Text nach /elite/gps/anzeige:
+# je Zeile ein Teil, Felder mit Tab getrennt
+#   T spalte zeile farbe(b/s) groesse(g/k) anker(w/e/center) text | B zeile | G | K tasten...
+var APOLLO_W = 1024;
+var APOLLO_H = 320;
+var APOLLO_RAND = 6;
+var BERNSTEIN = [1, 0.69, 0];
+var apollo_wurzel = nil;
+
+var apollo_start = func {
+    props.globals.initNode(GPS ~ "anzeige", "", "STRING");
+    var leinwand = canvas.new({"name": "EliteApollo", "size": [APOLLO_W, APOLLO_H],
+                               "view": [APOLLO_W, APOLLO_H], "mipmapping": 1});
+    leinwand.setColorBackground(0, 0, 0, 1);
+    leinwand.addPlacement({"node": "ApolloScreen"});
+    apollo_wurzel = leinwand.createGroup();
+    setlistener(GPS ~ "anzeige", func(n) apollo_zeichne(n.getValue() or ""), 1, 0);
+};
+
+var apollo_farbe = func(text) {
+    if (text == "white")
+        return [1, 1, 1];
+    if (text == "black")
+        return [0, 0, 0];
+    if (size(text) != 7)
+        return [0.67, 0.67, 0.67];
+    return [num("0x" ~ substr(text, 1, 2)) / 255, num("0x" ~ substr(text, 3, 2)) / 255,
+            num("0x" ~ substr(text, 5, 2)) / 255];
+};
+
+var apollo_zeichne = func(inhalt) {
+    apollo_wurzel.removeAllChildren();
+    var x0 = APOLLO_RAND;
+    var y0 = APOLLO_RAND;
+    var x1 = APOLLO_W - APOLLO_RAND;
+    var y1 = APOLLO_H - APOLLO_RAND;
+    var zeile_h = (y1 - y0) / 8;
+    var gross = zeile_h * 0.8;
+    var rechteck = func(xa, ya, xb, yb, fuellen) {
+        var p = apollo_wurzel.createChild("path").rect(xa, ya, xb - xa, yb - ya);
+        if (fuellen)
+            p.setColorFill(BERNSTEIN[0], BERNSTEIN[1], BERNSTEIN[2]);
+        else
+            p.setColor(0.35, 0.24, 0).setStrokeLineWidth(2);
+    };
+    var schreibe = func(x, y, text, farbe, groesse, ausrichtung) {
+        apollo_wurzel.createChild("text").setText(text)
+            .setFont("LiberationFonts/LiberationMono-Bold.ttf")
+            .setFontSize(groesse, 1).setColor(farbe[0], farbe[1], farbe[2])
+            .setAlignment(ausrichtung).setTranslation(x, y);
+    };
+    foreach (var zeile; split("\n", inhalt)) {
+        var f = split("\t", zeile);
+        if (f[0] == "T" and size(f) >= 7) {
+            var x = x0 + 14 + num(f[1]) * (x1 - x0 - 28);
+            var y = y0 + zeile_h * (num(f[2]) + 0.6);
+            var anker = f[5] == "w" ? "left-center"
+                      : f[5] == "e" ? "right-center" : "center-center";
+            schreibe(x, y, f[6], f[3] == "s" ? [0, 0, 0] : BERNSTEIN,
+                     f[4] == "k" ? gross * 0.75 : gross, anker);
+        } elsif (f[0] == "B" and size(f) >= 2) {
+            rechteck(x0 + 4, y0 + zeile_h * (num(f[1]) + 0.1), x1 - 4,
+                     y0 + zeile_h * (num(f[1]) + 1.1), 1);
+        } elsif (f[0] == "G") {
+            rechteck(x1 - 14 - zeile_h * 2.2, y0 + zeile_h * 0.15, x1 - 6,
+                     y0 + zeile_h * 1.05, 1);
+        # Karte (elite_gps.karte_teile): Pixel der Leinwand, Farben als #rrggbb
+        } elsif (f[0] == "H" and size(f) >= 2) {
+            apollo_wurzel.createChild("path").rect(0, 0, APOLLO_W, APOLLO_H)
+                .setColorFill(apollo_farbe(f[1]));
+        } elsif (f[0] == "O" and size(f) >= 7) {
+            var p = apollo_wurzel.createChild("path").circle(num(f[3]), num(f[1]), num(f[2]))
+                .setColor(apollo_farbe(f[4])).setStrokeLineWidth(num(f[6]));
+            if (f[5] == "1")
+                p.setStrokeDashArray([4, 4]);
+        } elsif (f[0] == "F" and size(f) >= 5) {
+            apollo_wurzel.createChild("path").circle(num(f[3]), num(f[1]), num(f[2]))
+                .setColorFill(apollo_farbe(f[4]));
+        } elsif (f[0] == "P" and size(f) >= 9) {
+            var p = apollo_wurzel.createChild("path").moveTo(num(f[3]), num(f[4]));
+            for (var i = 5; i + 1 < size(f); i += 2)
+                p.lineTo(num(f[i]), num(f[i + 1]));
+            p.close();
+            if (f[1] != "")
+                p.setColorFill(apollo_farbe(f[1]));
+            if (f[2] != "")
+                p.setColor(apollo_farbe(f[2])).setStrokeLineWidth(1.5);
+        } elsif (f[0] == "L" and size(f) >= 7) {
+            apollo_wurzel.createChild("path").moveTo(num(f[1]), num(f[2]))
+                .lineTo(num(f[3]), num(f[4])).setColor(apollo_farbe(f[5]))
+                .setStrokeLineWidth(num(f[6]));
+        } elsif (f[0] == "X" and size(f) >= 8) {
+            apollo_wurzel.createChild("text").setText(f[7])
+                .setFont(f[5] == "1" ? "LiberationFonts/LiberationSans-Bold.ttf"
+                                     : "LiberationFonts/LiberationSans-Regular.ttf")
+                .setFontSize(num(f[4]), 1).setColor(apollo_farbe(f[3]))
+                .setAlignment(f[6] == "w" ? "left-center"
+                            : f[6] == "sw" ? "left-bottom" : "center-center")
+                .setTranslation(num(f[1]), num(f[2]));
+        } elsif (f[0] == "K") {
+            # Bildschirmtasten unten
+            var anzahl = size(f) - 1;
+            var teil = (x1 - x0) / anzahl;
+            var oben = y1 - zeile_h * 1.2;
+            for (var i = 0; i < anzahl; i += 1) {
+                var ka = x0 + i * teil + 4;
+                var kb = x0 + (i + 1) * teil - 4;
+                rechteck(ka, oben, kb, y1 - 4, 0);
+                schreibe((ka + kb) / 2, (oben + y1 - 4) / 2, f[i + 1], BERNSTEIN,
+                         gross * 0.75, "center-center");
+            }
+        }
+    }
 };
 
 var laengste_piste_ft = func(apt) {
