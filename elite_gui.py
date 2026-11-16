@@ -46,6 +46,9 @@ MONITORE = {
 }
 # Cockpit der Seneca: "elite" = ohne die Teile, die es als Hardware gibt;
 # "original" = unveraendertes Seneca-Cockpit (stellt SenecaII-set.xml um)
+# Sichtweite der vollen Landschaftsdetails -> /sim/rendering/static-lod/detailed (Meter)
+DETAIL = {"1,5 km": 1500, "3 km": 3000, "5 km": 5000, "10 km": 10000,
+          "wie im Launcher eingestellt": None}
 COCKPIT = {"elite": "Elite-Cockpit (ohne die Teile, die es als Hardware gibt)",
            "original": "Original-Seneca-Cockpit (alles wie im normalen FlightGear)"}
 # Modell-Zeilen der Zwei-Monitor-Vorlage (Seneca ohne Armaturenbrett)
@@ -779,6 +782,18 @@ class Fenster:
         ttk.Checkbutton(feld, text="KI-Verkehr (belebte Flughaefen, kostet viel Bildrate)",
                         variable=self.ki_verkehr, command=self.fg_vorschau
                         ).pack(anchor="w", pady=(6, 0))
+        # Volle Detailstufe der Landschaft (Baeume, Gebaeude): weit = Prozessor am Anschlag.
+        # Gemessen 2026-11-16 bei 26 km in LSZH: 30 Bilder/s, ohne Landschaft 60.
+        zeile = ttk.Frame(feld)
+        zeile.pack(fill="x", pady=(6, 0))
+        ttk.Label(zeile, text="Volle Landschaftsdetails bis:").pack(side="left")
+        self.detail = ttk.Combobox(zeile, state="readonly", width=24, values=list(DETAIL))
+        self.detail.set(self.start.get("detail", "3 km"))
+        if self.detail.get() not in DETAIL:
+            self.detail.set("3 km")
+        self.detail.bind("<<ComboboxSelected>>", lambda _e: self.fg_vorschau())
+        self.detail.pack(side="left", padx=6)
+        ttk.Label(zeile, text="(weniger = mehr Bilder pro Sekunde)").pack(side="left")
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
         ttk.Button(zeile, text="FlightGear starten", command=self.starte_fg).pack(side="left")
@@ -876,6 +891,9 @@ class Fenster:
         if self.httpd.get():
             befehl.append("--httpd=8080")
         befehl.append("--enable-ai-traffic" if self.ki_verkehr.get() else "--disable-ai-traffic")
+        meter = DETAIL.get(self.detail.get())
+        if meter:
+            befehl.append(f"--prop:/sim/rendering/static-lod/detailed={meter}")
         konfig = MONITORE[self.monitore.get()][1]
         if konfig:
             # starte_fg schreibt diese Datei passend zum angeschlossenen Monitor
@@ -885,7 +903,7 @@ class Fenster:
 
     def fg_vorschau(self):
         self.start.update(monitore=self.monitore.get(), cockpit=self.cockpit.get(),
-                          ki_verkehr=self.ki_verkehr.get(),
+                          ki_verkehr=self.ki_verkehr.get(), detail=self.detail.get(),
                           httpd=self.httpd.get(),
                           bruecke_automatisch=self.auto.get(), fgfs=self.fgfs.get(),
                           zusatz=self.zusatz.get("1.0", "end").strip())
