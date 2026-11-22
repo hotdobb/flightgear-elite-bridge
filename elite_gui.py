@@ -414,6 +414,25 @@ class Fenster:
         if self.navi_war_offen:
             self.gps_umschalten()
 
+    def navi_mit_flightgear(self, fg_da):
+        """Navi und Bordcomputer schliessen, wenn FlightGear 5 s lang weg ist (beendet), und
+        oeffnen wieder, sobald FlightGear zurueck ist. Vor dem ersten FlightGear-Start bleibt
+        alles, wie es ist."""
+        if fg_da:
+            self.fg_war_da, self.fg_weg_seit = True, None
+            if getattr(self, "navi_ohne_fg", False):
+                self.navi_ohne_fg = False
+                if not self.navi_offen():
+                    self.gps_umschalten()
+            return
+        if not getattr(self, "fg_war_da", False):
+            return
+        if getattr(self, "fg_weg_seit", None) is None:
+            self.fg_weg_seit = time.monotonic()
+        elif time.monotonic() - self.fg_weg_seit > 5 and self.navi_offen():
+            self.navi_ohne_fg = True
+            self.gps_umschalten()
+
     def navi_offen(self):
         gps = getattr(self, "gps", None)
         return gps is not None and gps.winfo_exists()
@@ -1017,6 +1036,7 @@ class Fenster:
         status = self.bruecke.verbunden() if laeuft else {}
         status["FlightGear"] = laeuft and self.bruecke.fg_da()
         self.beschriftung_senden(status["FlightGear"])
+        self.navi_mit_flightgear(status["FlightGear"])
         self.folge_monitor()
         # Tasten INSTR / MAP am AP-3000: Bordcomputer <-> Checkliste, Navi-Text <-> Karte
         ereignisse = self.bruecke.ap3000.anzeige_ereignisse
