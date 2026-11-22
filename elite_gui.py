@@ -35,22 +35,24 @@ import elite_einrichten
 import elite_fg as fg
 import elite_gps
 import seneca_elite
+import elite_sprache
+from elite_sprache import t
 
 ORDNER = os.path.dirname(os.path.abspath(__file__))
 # fgfs.exe: gespeichert, sonst gesucht (elite_einrichten.finde_fgfs)
 MONITORE = {
-    1: ("1 Monitor: 3D-Cockpit", None),
-    2: ("2 Monitore: Aussensicht + Instrumente",
+    1: (t("1 Monitor: 3D-Cockpit"), None),
+    2: (t("2 Monitore: Aussensicht + Instrumente"),
         os.path.join(ORDNER, "fg-config", "zwei-monitore.xml")),
-    3: ("3 Monitore: + GPS (kommt noch)", None),
+    3: (t("3 Monitore: + GPS (kommt noch)"), None),
 }
 # Cockpit der Seneca: "elite" = ohne die Teile, die es als Hardware gibt;
 # "original" = unveraendertes Seneca-Cockpit (stellt SenecaII-set.xml um)
 # Sichtweite der vollen Landschaftsdetails -> /sim/rendering/static-lod/detailed (Meter)
 DETAIL = {"1,5 km": 1500, "3 km": 3000, "5 km": 5000, "10 km": 10000,
-          "wie im Launcher eingestellt": None}
-COCKPIT = {"elite": "Elite-Cockpit (ohne die Teile, die es als Hardware gibt)",
-           "original": "Original-Seneca-Cockpit (alles wie im normalen FlightGear)"}
+          t("wie im Launcher eingestellt"): None}
+COCKPIT = {"elite": t("Elite-Cockpit (ohne die Teile, die es als Hardware gibt)"),
+           "original": t("Original-Seneca-Cockpit (alles wie im normalen FlightGear)")}
 # Modell-Zeilen der Zwei-Monitor-Vorlage (Seneca ohne Armaturenbrett)
 MODELL_AUSSEN = """    <model>
       <!-- Seneca ohne Armaturenbrett (erzeugt von seneca_elite.py) -->
@@ -133,17 +135,17 @@ def monitor_texte():
     texte = []
     for x, y, breite, hoehe, primaer, name in liste:
         if primaer or haupt is None:
-            lage = "Hauptbildschirm"
+            lage = t("Hauptbildschirm")
         else:
             # wo er laut Windows-Anordnung liegt, vom Hauptbildschirm aus gesehen
             dx = (x + breite / 2) - (haupt[0] + haupt[2] / 2)
             dy = (y + hoehe / 2) - (haupt[1] + haupt[3] / 2)
             teile = []
             if abs(dx) > haupt[2] / 2:
-                teile.append("rechts" if dx > 0 else "links")
+                teile.append(t("rechts") if dx > 0 else t("links"))
             if abs(dy) > haupt[3] / 2:
-                teile.append("unten" if dy > 0 else "oben")
-            lage = " ".join(teile) or "daneben"
+                teile.append(t("unten") if dy > 0 else t("oben"))
+            lage = " ".join(teile) or t("daneben")
         texte.append(f"{breite} x {hoehe}, {lage}")
     return texte
 
@@ -258,10 +260,10 @@ def feld_platz(feld):
     pro_einheit = b / seneca_elite.PANEL_W
     return (round(mx + x + x1 * pro_einheit), round(my + y + h - y2 * pro_einheit),
             round((x2 - x1) * pro_einheit), round((y2 - y1) * pro_einheit))
-HINWEIS_KAL = ("Zahlen = Rohwerte des Geraets (0-127); 'hier' uebernimmt die aktuelle "
+HINWEIS_KAL = t("Zahlen = Rohwerte des Geraets (0-127); 'hier' uebernimmt die aktuelle "
                "Stellung. Raste: Haekchen an = hinter der Markierung ist Umkehrschub. "
                "Fuer 'Automatisch' vorher Horn, Pedale und Trimmknopf in die Mitte.")
-HINWEIS_AUTO = ("Jetzt jeden Hebel, das Horn (links/rechts, vor/zurueck), die Pedale, beide "
+HINWEIS_AUTO = t("Jetzt jeden Hebel, das Horn (links/rechts, vor/zurueck), die Pedale, beide "
                 "Bremsen und den Trimmknopf einmal bis zu BEIDEN Anschlaegen bewegen. "
                 "Dann 'Fertig' druecken. Die Raste stellst du danach mit 'hier' ein.")
 
@@ -274,7 +276,7 @@ class Ausgabe:
 
     def write(self, text):
         if text:
-            self.ziel.put(text)
+            self.ziel.put(t(text))
 
     def flush(self):
         pass
@@ -297,7 +299,7 @@ class Fenster:
         self.achs_zeilen = []
         self.auto_kal = None   # waehrend "Automatisch kalibrieren": Mitte, Min, Max
 
-        wurzel.title("Elite-Bruecke")
+        wurzel.title(t("Elite-Bruecke"))
         wurzel.geometry("1200x800")
         wurzel.protocol("WM_DELETE_WINDOW", self.schliessen)
         self.baue_kopf()
@@ -336,7 +338,7 @@ class Fenster:
             leinwand = tk.Canvas(feld, width=18, height=18, highlightthickness=0)
             leinwand.pack(side="left")
             punkt = leinwand.create_oval(2, 2, 16, 16, fill=GRAU, outline="")
-            ttk.Label(feld, text=name).pack(side="left", padx=4)
+            ttk.Label(feld, text=t(name)).pack(side="left", padx=4)
             self.lampen[name] = (leinwand, punkt)
         self.profil_text = ttk.Label(kopf, text="")
         self.profil_text.pack(side="right")
@@ -410,7 +412,7 @@ class Fenster:
     # --- Reiter Meldungen --------------------------------------------------------------
     def baue_meldungen(self, reiter):
         seite = ttk.Frame(reiter, padding=6)
-        reiter.add(seite, text="Meldungen")
+        reiter.add(seite, text=t("Meldungen"))
         self.meldefeld = tk.Text(seite, height=20, wrap="word", state="disabled")
         leiste = ttk.Scrollbar(seite, command=self.meldefeld.yview)
         self.meldefeld.configure(yscrollcommand=leiste.set)
@@ -421,15 +423,15 @@ class Fenster:
     def baue_profilwahl(self, seite, aktualisiere):
         zeile = ttk.Frame(seite)
         zeile.pack(fill="x", pady=(0, 6))
-        ttk.Label(zeile, text="Profil bearbeiten:").pack(side="left")
+        ttk.Label(zeile, text=t("Profil bearbeiten:")).pack(side="left")
         wahl = ttk.Combobox(zeile, state="readonly", width=18)
         wahl.pack(side="left", padx=6)
         wahl.bind("<<ComboboxSelected>>", lambda _e: aktualisiere())
-        ttk.Button(zeile, text="Profil fuer aktuelles Flugzeug anlegen",
+        ttk.Button(zeile, text=t("Profil fuer aktuelles Flugzeug anlegen"),
                    command=self.neues_profil).pack(side="left", padx=6)
-        ttk.Button(zeile, text="Profil loeschen", command=lambda: self.loesche_profil(wahl)
+        ttk.Button(zeile, text=t("Profil loeschen"), command=lambda: self.loesche_profil(wahl)
                    ).pack(side="left")
-        ttk.Button(zeile, text="Speichern", command=self.speichern).pack(side="right")
+        ttk.Button(zeile, text=t("Speichern"), command=self.speichern).pack(side="right")
         return wahl
 
     def profile_auffrischen(self):
@@ -446,8 +448,8 @@ class Fenster:
     def neues_profil(self):
         name = self.bruecke.flugzeug
         if not name:
-            messagebox.showinfo("Profil", "FlightGear laeuft nicht oder meldet kein Flugzeug.\n"
-                                "Bitte erst FlightGear mit dem Flugzeug starten.")
+            messagebox.showinfo(t("Profil"), t("FlightGear laeuft nicht oder meldet kein Flugzeug.\n"
+                                "Bitte erst FlightGear mit dem Flugzeug starten."))
             return
         profile = self.einstellungen["profile"]
         if name not in profile:
@@ -463,9 +465,9 @@ class Fenster:
     def loesche_profil(self, wahl):
         name = wahl.get()
         if name == "standard":
-            messagebox.showinfo("Profil", "Das Standard-Profil bleibt immer erhalten.")
+            messagebox.showinfo(t("Profil"), t("Das Standard-Profil bleibt immer erhalten."))
             return
-        if messagebox.askyesno("Profil", f"Profil '{name}' loeschen?"):
+        if messagebox.askyesno(t("Profil"), t("Profil '{name}' loeschen?").format(name=name)):
             del self.einstellungen["profile"][name]
             if self.bruecke.profil_name == name:
                 self.bruecke.profil_name = "standard"
@@ -475,26 +477,26 @@ class Fenster:
 
     def baue_kalibrieren(self, reiter):
         seite = ttk.Frame(reiter, padding=6)
-        reiter.add(seite, text="Achsen kalibrieren")
+        reiter.add(seite, text=t("Achsen kalibrieren"))
         self.kal_wahl = self.baue_profilwahl(seite, self.kal_laden)
         zeile = ttk.Frame(seite)
         zeile.pack(fill="x")
         self.kal_hinweis = ttk.Label(zeile, text=HINWEIS_KAL, wraplength=820)
         self.kal_hinweis.pack(side="left")
-        self.knopf_auto = ttk.Button(zeile, text="Automatisch kalibrieren",
+        self.knopf_auto = ttk.Button(zeile, text=t("Automatisch kalibrieren"),
                                      command=self.auto_kalibrieren)
         self.knopf_auto.pack(side="right")
-        self.knopf_abbruch = ttk.Button(zeile, text="Abbrechen", command=self.auto_ende)
+        self.knopf_abbruch = ttk.Button(zeile, text=t("Abbrechen"), command=self.auto_ende)
         tabelle = ttk.Frame(seite)
         tabelle.pack(fill="both", expand=True, pady=6)
         for spalte, titel in enumerate(["Achse", "Roh", "Ergebnis", "", "Min / 0", "Mitte",
                                         "Max / 1", "Raste (Umkehr)", "Totzone %",
                                         "Kurve %", "umkehren"]):
-            ttk.Label(tabelle, text=titel, font=("Segoe UI", 9, "bold")).grid(
+            ttk.Label(tabelle, text=t(titel), font=("Segoe UI", 9, "bold")).grid(
                 row=0, column=spalte, sticky="w", padx=4)
         for nr, achse in enumerate(fg.ACHSEN, start=1):
             geraet, code, name, art, *_ = achse
-            ttk.Label(tabelle, text=name).grid(row=nr, column=0, sticky="w", padx=4, pady=2)
+            ttk.Label(tabelle, text=t(name)).grid(row=nr, column=0, sticky="w", padx=4, pady=2)
             zeile = {"achse": achse, "felder": [], "raste": None}
             zeile["roh"] = ttk.Label(tabelle, text="-", width=4)
             zeile["roh"].grid(row=nr, column=1, padx=4)
@@ -530,7 +532,7 @@ class Fenster:
         ttk.Spinbox(feld, from_=von, to=bis, increment=schritt, width=4,
                     textvariable=wert).pack(side="left")
         if hier:
-            ttk.Button(feld, text="hier", width=5,
+            ttk.Button(feld, text=t("hier"), width=5,
                        command=lambda: self.setze_roh(wert, *hier)).pack(side="left", padx=2)
         return feld, wert
 
@@ -539,13 +541,13 @@ class Fenster:
         roh = self.bruecke.roh
         if self.auto_kal is None:
             if not any(schluessel in roh for schluessel in fg.ACHS_CODES):
-                messagebox.showinfo("Kalibrieren", "Keine Werte - sind Pro Panel und Pedale "
-                                    "verbunden und laeuft die Bruecke?")
+                messagebox.showinfo(t("Kalibrieren"), t("Keine Werte - sind Pro Panel und Pedale "
+                                    "verbunden und laeuft die Bruecke?"))
                 return
             mitte = {z["achse"][2]: roh.get(z["achse"][:2]) for z in self.achs_zeilen
                      if z["achse"][3] == "ruder"}
             self.auto_kal = {"mitte": mitte, "min": {}, "max": {}}
-            self.knopf_auto.configure(text="Fertig - uebernehmen")
+            self.knopf_auto.configure(text=t("Fertig - uebernehmen"))
             self.knopf_abbruch.pack(side="right", padx=6)
             self.kal_hinweis.configure(text=HINWEIS_AUTO)
             return
@@ -583,7 +585,7 @@ class Fenster:
 
     def auto_ende(self):
         self.auto_kal = None
-        self.knopf_auto.configure(text="Automatisch kalibrieren")
+        self.knopf_auto.configure(text=t("Automatisch kalibrieren"))
         self.knopf_abbruch.pack_forget()
         self.kal_hinweis.configure(text=HINWEIS_KAL)
 
@@ -634,24 +636,24 @@ class Fenster:
     # --- Reiter Schalter-Test ----------------------------------------------------------
     def baue_schaltertest(self, reiter):
         seite = ttk.Frame(reiter, padding=6)
-        reiter.add(seite, text="Schalter-Test")
-        ttk.Label(seite, text="Schalter, Taste oder Knopf bedienen: links leuchtet, was die "
+        reiter.add(seite, text=t("Schalter-Test"))
+        ttk.Label(seite, text=t("Schalter, Taste oder Knopf bedienen: links leuchtet, was die "
                   "Bruecke an FlightGear schickt (Wert ungleich 0 = gruen). Rechts steht jede "
                   "Meldung der Geraete mit Code und Wert - auch von Tasten, die noch nicht "
-                  "belegt sind.", wraplength=940).pack(anchor="w")
+                  "belegt sind."), wraplength=940).pack(anchor="w")
         teile = ttk.Frame(seite)
         teile.pack(fill="both", expand=True, pady=6)
         links = ttk.Frame(teile)
         links.pack(side="left", fill="y", padx=(0, 10))
         self.schalter_zellen = {}
         for nr, (name, _) in enumerate(fg.SCHALTER):
-            zelle = tk.Label(links, text=name, width=16, anchor="w", relief="groove", padx=4)
+            zelle = tk.Label(links, text=t(name), width=16, anchor="w", relief="groove", padx=4)
             zelle.grid(row=nr % 13, column=nr // 13, padx=2, pady=1, sticky="w")
             self.schalter_zellen[name] = zelle
         self.zellen_farbe = zelle.cget("background")
         rechts = ttk.Frame(teile)
         rechts.pack(side="left", fill="both", expand=True)
-        ttk.Button(rechts, text="Liste leeren", command=lambda: self.leere(self.testliste)
+        ttk.Button(rechts, text=t("Liste leeren"), command=lambda: self.leere(self.testliste)
                    ).pack(anchor="e")
         self.testliste = tk.Text(rechts, height=18, wrap="none", state="disabled",
                                  font=("Consolas", 9))
@@ -672,10 +674,10 @@ class Fenster:
         for name, regel in fg.SCHALTER:
             zelle = self.schalter_zellen[name]
             if not panel_da:
-                zelle.configure(text=f"{name}  -", background=self.zellen_farbe)
+                zelle.configure(text=f"{t(name)}  -", background=self.zellen_farbe)
                 continue
             wert = fg.schalterwert(name, regel, stabil, profil)
-            zelle.configure(text=f"{name}  {wert}",
+            zelle.configure(text=f"{t(name)}  {wert}",
                             background=GRUEN if wert else self.zellen_farbe)
         protokoll = self.bruecke.protokoll
         if not protokoll:
@@ -686,9 +688,10 @@ class Fenster:
             name = (geraet == fg.AP3000 and fg.ap3000_klartext(code, wert)) or \
                 (geraet == fg.PRO_PANEL and fg.pro_panel_klartext(code, wert)) or \
                 fg.CODE_NAMEN.get((geraet, code), "(noch nicht belegt)")
+            name = t(name)
             zeile = (f"{time.strftime('%H:%M:%S', time.localtime(zeit))}"
-                     f"  {fg.GERAETE_NAMEN.get(geraet, geraet):9}  Code {code:3}"
-                     f"  Wert {wert:3} ({wert:07b})  {name}\n")
+                     f"  {t(fg.GERAETE_NAMEN.get(geraet, geraet)):9}  Code {code:3}"
+                     f"  {t('Wert')} {wert:3} ({wert:07b})  {name}\n")
             self.testliste.insert("end", zeile)
             # dieselbe Zeile in die Mitschrift (zum Anlernen unbekannter Schalter)
             try:
@@ -705,19 +708,19 @@ class Fenster:
     # --- Reiter Wippen -----------------------------------------------------------------
     def baue_wippen(self, reiter):
         seite = ttk.Frame(reiter, padding=6)
-        reiter.add(seite, text="Wippen und Trimmung")
+        reiter.add(seite, text=t("Wippen und Trimmung"))
         self.wip_wahl = self.baue_profilwahl(seite, self.wip_laden)
-        ttk.Label(seite, text="Haekchen = Richtung umgedreht.").pack(anchor="w", pady=(0, 6))
+        ttk.Label(seite, text=t("Haekchen = Richtung umgedreht.")).pack(anchor="w", pady=(0, 6))
         self.wippen = {}
         for name, titel in fg.UMKEHRBAR.items():
             variable = tk.BooleanVar()
-            ttk.Checkbutton(seite, text=titel, variable=variable,
+            ttk.Checkbutton(seite, text=t(titel), variable=variable,
                             command=self.wip_uebernehmen).pack(anchor="w", pady=2)
             self.wippen[name] = variable
         # Tempo der Hoehentrimmung (Horn) je Profil
         zeile = ttk.Frame(seite)
         zeile.pack(anchor="w", pady=(12, 2))
-        ttk.Label(zeile, text="Tempo Hoehentrimm (1 = Standard, groesser = schneller):"
+        ttk.Label(zeile, text=t("Tempo Hoehentrimm (1 = Standard, groesser = schneller):")
                   ).pack(side="left")
         self.trimm_tempo = tk.DoubleVar(value=1.0)
         ttk.Spinbox(zeile, from_=0.2, to=10, increment=0.2, width=5, format="%.1f",
@@ -745,10 +748,10 @@ class Fenster:
         """Erste Seite: alles fuer den taeglichen Start, von oben nach unten in der
         Reihenfolge, in der man es braucht. Selten Gebrauchtes steht unter "Erweitert"."""
         seite = ttk.Frame(reiter, padding=6)
-        reiter.add(seite, text="Start")
+        reiter.add(seite, text=t("Start"))
 
         # 1. FlightGear starten
-        feld = ttk.LabelFrame(seite, text="1. FlightGear starten", padding=8)
+        feld = ttk.LabelFrame(seite, text=t("1. FlightGear starten"), padding=8)
         feld.pack(fill="x", pady=(0, 8))
         self.monitore = tk.IntVar(value=self.start.get("monitore", 2))
         for nr, (titel, _) in MONITORE.items():
@@ -764,14 +767,14 @@ class Fenster:
                                   ("instrumente", "Instrumente auf:")):
             zeile = ttk.Frame(feld)
             zeile.pack(anchor="w", pady=(4, 0))
-            ttk.Label(zeile, text=titel, width=16).pack(side="left")
+            ttk.Label(zeile, text=t(titel), width=16).pack(side="left")
             wahl = ttk.Combobox(zeile, state="readonly", width=42)
             wahl.configure(postcommand=self.monitor_wahl_fuellen)
             wahl.bind("<<ComboboxSelected>>", lambda _e: self.monitor_wahl_uebernehmen())
             wahl.pack(side="left")
             self.monitor_wahl[schluessel] = wahl
         self.monitor_wahl_fuellen()
-        ttk.Label(feld, text="Cockpit der Seneca:").pack(anchor="w", pady=(6, 0))
+        ttk.Label(feld, text=t("Cockpit der Seneca:")).pack(anchor="w", pady=(6, 0))
         self.cockpit = tk.StringVar(value=self.start.get("cockpit", "elite"))
         for wert, titel in COCKPIT.items():
             ttk.Radiobutton(feld, text=titel, value=wert, variable=self.cockpit,
@@ -779,86 +782,104 @@ class Fenster:
         # KI-Verkehr: an grossen Flughaefen hunderte KI-Flugzeuge (Zuerich: 327), die in jedem
         # Fenster mitgezeichnet werden -> Bildrate halbiert (gemessen 2026-11-16: 15 statt 31)
         self.ki_verkehr = tk.BooleanVar(value=self.start.get("ki_verkehr", False))
-        ttk.Checkbutton(feld, text="KI-Verkehr (belebte Flughaefen, kostet viel Bildrate)",
+        ttk.Checkbutton(feld, text=t("KI-Verkehr (belebte Flughaefen, kostet viel Bildrate)"),
                         variable=self.ki_verkehr, command=self.fg_vorschau
                         ).pack(anchor="w", pady=(6, 0))
         # Volle Detailstufe der Landschaft (Baeume, Gebaeude): weit = Prozessor am Anschlag.
         # Gemessen 2026-11-16 bei 26 km in LSZH: 30 Bilder/s, ohne Landschaft 60.
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
-        ttk.Label(zeile, text="Volle Landschaftsdetails bis:").pack(side="left")
+        ttk.Label(zeile, text=t("Volle Landschaftsdetails bis:")).pack(side="left")
         self.detail = ttk.Combobox(zeile, state="readonly", width=24, values=list(DETAIL))
         self.detail.set(self.start.get("detail", "3 km"))
         if self.detail.get() not in DETAIL:
             self.detail.set("3 km")
         self.detail.bind("<<ComboboxSelected>>", lambda _e: self.fg_vorschau())
         self.detail.pack(side="left", padx=6)
-        ttk.Label(zeile, text="(weniger = mehr Bilder pro Sekunde)").pack(side="left")
+        ttk.Label(zeile, text=t("(weniger = mehr Bilder pro Sekunde)")).pack(side="left")
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
-        ttk.Button(zeile, text="FlightGear starten", command=self.starte_fg).pack(side="left")
-        ttk.Label(zeile, text="Flugzeug, Flughafen und Piste waehlst du danach wie gewohnt "
-                  "im Launcher.").pack(side="left", padx=10)
+        ttk.Button(zeile, text=t("FlightGear starten"), command=self.starte_fg).pack(side="left")
+        ttk.Label(zeile, text=t("Flugzeug, Flughafen und Piste waehlst du danach wie gewohnt "
+                  "im Launcher.")).pack(side="left", padx=10)
 
         # 2. Anzeigen im Instrumentenbrett
-        feld = ttk.LabelFrame(seite, text="2. Im Instrumentenbrett", padding=8)
+        feld = ttk.LabelFrame(seite, text=t("2. Im Instrumentenbrett"), padding=8)
         feld.pack(fill="x", pady=(0, 8))
         # Namensschilder der Instrumente im 2D-Panel (Wahl bleibt gespeichert)
         self.beschriftung = tk.BooleanVar(value=self.start.get("beschriftung", False))
         self.beschriftung_gesendet = None   # was FlightGear zuletzt bestaetigt bekommen hat
         self.beschriftung_laeuft = False
-        ttk.Checkbutton(feld, text="Namen ueber den Instrumenten zeigen",
+        ttk.Checkbutton(feld, text=t("Namen ueber den Instrumenten zeigen"),
                         variable=self.beschriftung,
                         command=lambda: self.start.update(beschriftung=self.beschriftung.get())
                         ).pack(anchor="w")
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
-        ttk.Button(zeile, text="Navi und Bordcomputer ein/aus", command=self.gps_umschalten
+        ttk.Button(zeile, text=t("Navi und Bordcomputer ein/aus"), command=self.gps_umschalten
                    ).pack(side="left")
-        ttk.Label(zeile, text="Oeffnen sich beim Start mit 2 Monitoren von selbst."
+        ttk.Label(zeile, text=t("Oeffnen sich beim Start mit 2 Monitoren von selbst.")
                   ).pack(side="left", padx=10)
 
         # 3. Bruecke
-        feld = ttk.LabelFrame(seite, text="3. Bruecke (Verbindung zur Elite-Hardware)",
+        feld = ttk.LabelFrame(seite, text=t("3. Bruecke (Verbindung zur Elite-Hardware)"),
                               padding=8)
         feld.pack(fill="x", pady=(0, 8))
         self.auto = tk.BooleanVar(value=self.start.get("bruecke_automatisch", True))
-        ttk.Checkbutton(feld, text="Beim Oeffnen dieses Fensters von selbst starten",
+        ttk.Checkbutton(feld, text=t("Beim Oeffnen dieses Fensters von selbst starten"),
                         variable=self.auto, command=self.fg_vorschau).pack(anchor="w")
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
-        self.knopf_start = ttk.Button(zeile, text="Bruecke starten", command=self.starte_bruecke)
+        self.knopf_start = ttk.Button(zeile, text=t("Bruecke starten"), command=self.starte_bruecke)
         self.knopf_start.pack(side="left")
-        self.knopf_stopp = ttk.Button(zeile, text="Bruecke stoppen", command=self.stoppe_bruecke)
+        self.knopf_stopp = ttk.Button(zeile, text=t("Bruecke stoppen"), command=self.stoppe_bruecke)
         self.knopf_stopp.pack(side="left", padx=6)
 
         # Erweitert: braucht man nur selten
-        feld = ttk.LabelFrame(seite, text="Erweitert", padding=8)
+        feld = ttk.LabelFrame(seite, text=t("Erweitert"), padding=8)
         feld.pack(fill="both", expand=True)
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(0, 6))
-        ttk.Button(zeile, text="Einrichten", command=self.einrichten).pack(side="left")
-        ttk.Label(zeile, text="Auf neuem Rechner und nach jedem Update von FlightGear oder "
-                  "der Seneca (FlightGear vorher einmal gestartet, Seneca installiert)."
+        ttk.Button(zeile, text=t("Einrichten"), command=self.einrichten).pack(side="left")
+        ttk.Label(zeile, text=t("Auf neuem Rechner und nach jedem Update von FlightGear oder "
+                  "der Seneca (FlightGear vorher einmal gestartet, Seneca installiert).")
                   ).pack(side="left", padx=10)
+        # Sprache der Oberflaeche (gilt nach dem naechsten Oeffnen dieses Fensters)
+        zeile = ttk.Frame(feld)
+        zeile.pack(fill="x", pady=(0, 6))
+        ttk.Label(zeile, text="Language / Sprache:").pack(side="left")
+        sprache = ttk.Combobox(zeile, state="readonly", width=10,
+                               values=list(elite_sprache.SPRACHEN.values()))
+        sprache.set(elite_sprache.SPRACHEN[elite_sprache.SPRACHE])
+        sprache.pack(side="left", padx=6)
+        hinweis = ttk.Label(zeile, text="")
+        hinweis.pack(side="left", padx=6)
+
+        def sprache_gewaehlt(_e):
+            kurz = next(k for k, v in elite_sprache.SPRACHEN.items() if v == sprache.get())
+            self.start["sprache"] = kurz
+            fg.speichere_einstellungen(self.einstellungen)
+            hinweis.configure(text="" if kurz == elite_sprache.SPRACHE else
+                              "Restart this window to apply. / Gilt nach Neustart dieses Fensters.")
+        sprache.bind("<<ComboboxSelected>>", sprache_gewaehlt)
         self.httpd = tk.BooleanVar(value=self.start.get("httpd", True))
-        ttk.Checkbutton(feld, text="Web-Schnittstelle (Port 8080) - noetig fuer Profilwahl, "
-                        "Navi, Bordcomputer und Instrumenten-Namen", variable=self.httpd,
+        ttk.Checkbutton(feld, text=t("Web-Schnittstelle (Port 8080) - noetig fuer Profilwahl, "
+                        "Navi, Bordcomputer und Instrumenten-Namen"), variable=self.httpd,
                         command=self.fg_vorschau).pack(anchor="w")
         zeile = ttk.Frame(feld)
         zeile.pack(fill="x", pady=(6, 0))
-        ttk.Label(zeile, text="fgfs.exe:").pack(side="left")
+        ttk.Label(zeile, text=t("fgfs.exe:")).pack(side="left")
         self.fgfs = tk.StringVar(value=elite_einrichten.finde_fgfs(self.start.get("fgfs")) or "")
         ttk.Entry(zeile, textvariable=self.fgfs).pack(side="left", fill="x", expand=True,
                                                       padx=6)
-        ttk.Label(feld, text="Weitere Startoptionen (eine pro Zeile; im Launcher unter "
-                  "'Zusaetzliche Einstellungen' nichts doppelt eintragen):"
+        ttk.Label(feld, text=t("Weitere Startoptionen (eine pro Zeile; im Launcher unter "
+                  "'Zusaetzliche Einstellungen' nichts doppelt eintragen):")
                   ).pack(anchor="w", pady=(6, 0))
         self.zusatz = tk.Text(feld, height=3)
         self.zusatz.insert("1.0", self.start.get("zusatz", ""))
         self.zusatz.bind("<KeyRelease>", lambda _e: self.fg_vorschau())
         self.zusatz.pack(fill="x")
-        ttk.Label(feld, text="Befehl, mit dem FlightGear gestartet wird:").pack(anchor="w",
+        ttk.Label(feld, text=t("Befehl, mit dem FlightGear gestartet wird:")).pack(anchor="w",
                                                                                   pady=(6, 0))
         self.vorschau = tk.Text(feld, height=5, state="disabled", wrap="word")
         self.vorschau.pack(fill="x")
@@ -867,7 +888,7 @@ class Fenster:
     def monitor_wahl_fuellen(self):
         """Auswahllisten mit den gerade angeschlossenen Monitoren fuellen; die gespeicherte
         Wahl (FlightGear-Nummer) bleibt, solange es den Monitor gibt."""
-        texte = ["Automatisch"] + monitor_texte()
+        texte = [t("Automatisch")] + monitor_texte()
         for schluessel, wahl in self.monitor_wahl.items():
             nr = self.start.get("monitor_" + schluessel)
             if nr is None or not 0 <= nr < len(texte) - 1:
@@ -916,15 +937,15 @@ class Fenster:
         self.fg_vorschau()
         befehl = self.fg_befehl()
         if not os.path.exists(befehl[0]):
-            messagebox.showerror("FlightGear", f"fgfs.exe nicht gefunden:\n{befehl[0]}")
+            messagebox.showerror("FlightGear", t("fgfs.exe nicht gefunden:") + f"\n{befehl[0]}")
             return
         self.speichern()
         seneca = seneca_elite.SENECA
         if not seneca or not os.path.isfile(os.path.join(seneca, "Models", "SenecaII-Elite.xml")):
             if not messagebox.askyesno(
-                    "FlightGear", "Die Seneca ist noch nicht eingerichtet (Elite-Cockpit, "
+                    "FlightGear", t("Die Seneca ist noch nicht eingerichtet (Elite-Cockpit, "
                     "Instrumentenbrett fehlen).\n\nTrotzdem starten? Sonst unter 'Erweitert' "
-                    "auf 'Einrichten' druecken."):
+                    "auf 'Einrichten' druecken.")):
                 return
         else:
             try:
@@ -942,7 +963,7 @@ class Fenster:
     def einrichten(self):
         """Protokolle kopieren, Seneca korrigieren und Elite-Dateien erzeugen."""
         if fg_laeuft():
-            messagebox.showinfo("Einrichten", "Bitte zuerst FlightGear beenden.")
+            messagebox.showinfo(t("Einrichten"), t("Bitte zuerst FlightGear beenden."))
             return
         self.config(cursor="watch")
         self.update()
@@ -957,12 +978,13 @@ class Fenster:
             self.fgfs.set(gefunden)
         else:
             ok = False
-            meldungen.append("fgfs.exe nicht gefunden - bitte unten bei 'fgfs.exe' eintragen.")
+            meldungen.append(t("fgfs.exe nicht gefunden - bitte unten bei 'fgfs.exe' eintragen."))
         self.speichern()
         for zeile in meldungen:
-            print("Einrichten:", zeile)
+            print(t("Einrichten:"), zeile)
         (messagebox.showinfo if ok else messagebox.showwarning)(
-            "Einrichten", ("Fertig.\n\n" if ok else "Nicht vollstaendig:\n\n") + "\n".join(meldungen))
+            t("Einrichten"), (t("Fertig.") + "\n\n" if ok else t("Nicht vollstaendig:") + "\n\n")
+            + "\n".join(t(m) for m in meldungen))
 
     # --- Allgemein ---------------------------------------------------------------------
     def speichern(self):
@@ -996,8 +1018,8 @@ class Fenster:
             farbe = GRAU if not laeuft else (GRUEN if status.get(name) else ROT)
             leinwand.itemconfigure(punkt, fill=farbe)
         flugzeug = self.bruecke.flugzeug or "-"
-        self.profil_text.configure(text=f"Flugzeug: {flugzeug}   aktives Profil: "
-                                   f"{self.bruecke.profil_name}")
+        self.profil_text.configure(text=t("Flugzeug: {flugzeug}   aktives Profil: {profil}").format(
+            flugzeug=flugzeug, profil=self.bruecke.profil_name))
         self.knopf_start.state(["disabled"] if laeuft else ["!disabled"])
         self.knopf_stopp.state(["!disabled"] if laeuft else ["disabled"])
         if not self.kal_wahl["values"] or set(self.kal_wahl["values"]) != set(
@@ -1023,13 +1045,13 @@ class Fenster:
                 z["wert"].configure(text=f"{ergebnis:+.2f}")
             else:
                 z["balken"]["value"] = ergebnis * 100
-                z["wert"].configure(text=f"UMKEHR {umkehr:.2f}" if umkehr > 0
+                z["wert"].configure(text=t("UMKEHR") + f" {umkehr:.2f}" if umkehr > 0
                                     else f"{ergebnis:.2f}")
         self.schaltertest_auffrischen(self.bruecke.profil)
         self.wurzel.after(100, self.takt)
 
     def schliessen(self):
-        if messagebox.askyesno("Elite-Bruecke", "Einstellungen speichern und beenden?"):
+        if messagebox.askyesno(t("Elite-Bruecke"), t("Einstellungen speichern und beenden?")):
             self.speichern()
         self.bruecke.halt()
         if self.faden:

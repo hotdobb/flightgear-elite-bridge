@@ -20,6 +20,7 @@ import tkinter as tk
 import urllib.request
 
 import elite_gps
+from elite_sprache import t
 
 URL = "http://127.0.0.1:8080/json/elite/bord?d=4"
 SCHWARZ, RAHMEN, FELD = "#000000", "#2b2b2b", "#101418"
@@ -166,7 +167,7 @@ class BordFenster(tk.Toplevel):
     def __init__(self, eltern, platz=None):
         """platz = (x, y, breite, hoehe): Feld im Instrumentenbrett (rahmenlos darueber)."""
         super().__init__(eltern)
-        self.title("Bordcomputer")
+        self.title(t("Bordcomputer"))
         self.configure(bg=SCHWARZ)
         self.platz = platz
         if platz:
@@ -240,11 +241,11 @@ class BordFenster(tk.Toplevel):
             aktiv = self.seite == name
             lw.create_rectangle(e + i * (halb - e), e, e + (i + 1) * (halb - e), kopf,
                                 fill=GELB if aktiv else FELD, outline="#555")
-            lw.create_text(e + (i + 0.5) * (halb - e), (e + kopf) / 2, text=titel,
+            lw.create_text(e + (i + 0.5) * (halb - e), (e + kopf) / 2, text=t(titel),
                            fill=SCHWARZ if aktiv else GRAU, font=self.schrift(5.5, True))
         self.flaechen.append((0, 0, breite, kopf, self.wechsle_seite))
         if not d:
-            lw.create_text(breite / 2, hoehe / 2, text="WARTE AUF FLIGHTGEAR", fill=GELB,
+            lw.create_text(breite / 2, hoehe / 2, text=t("WARTE AUF FLIGHTGEAR"), fill=GELB,
                            font=self.schrift(5, True))
         elif self.seite == "bord":
             self.seite_bord(d, breite, hoehe, kopf)
@@ -259,7 +260,7 @@ class BordFenster(tk.Toplevel):
         rand = 4 * e
         # Treibstoff: je Seite Balken und Gallonen
         y = oben + 3 * e
-        lw.create_text(rand, y, text="TREIBSTOFF (gal)", fill=GRAU, font=self.schrift(4),
+        lw.create_text(rand, y, text=t("TREIBSTOFF (gal)"), fill=GRAU, font=self.schrift(4),
                        anchor="nw")
         y += 6.5 * e
         gesamt = 0.0
@@ -281,27 +282,27 @@ class BordFenster(tk.Toplevel):
             minuten = gesamt / verbrauch * 60
             rest = f"{verbrauch:4.1f} gal/h   REST {int(minuten // 60)}:{int(minuten % 60):02d} h"
         else:
-            rest = "Motoren aus"
-        lw.create_text(rand, y + 2.5 * e, text=rest, fill=WEISS, font=self.schrift(5),
+            rest = t("Motoren aus")
+        lw.create_text(rand, y + 2.5 * e, text=t(rest), fill=WEISS, font=self.schrift(5),
                        anchor="w")
         y += 7.5 * e
         lw.create_text(rand, y + 2.5 * e, anchor="w", fill=GRAU, font=self.schrift(4.5),
-                       text=f"AUSSEN {d.get('oat-c') or 0:+.0f} °C     BORDNETZ "
-                            f"{d.get('volt') or 0:.1f} V")
+                       text=t(f"AUSSEN {d.get('oat-c') or 0:+.0f} °C     BORDNETZ "
+                              f"{d.get('volt') or 0:.1f} V"))
         y += 7 * e
         lw.create_line(rand, y, breite - rand, y, fill="#555")
         y += 2 * e
         # Warnungen
         liste = warnungen(d)
         if not liste:
-            lw.create_text(breite / 2, (y + hoehe) / 2, text="KEINE WARNUNG", fill=GRUEN,
+            lw.create_text(breite / 2, (y + hoehe) / 2, text=t("KEINE WARNUNG"), fill=GRUEN,
                            font=self.schrift(6, True))
             return
         zeile = min(9 * e, (hoehe - y - 2 * e) / len(liste))
         for farbe, text in liste:
             lw.create_rectangle(rand, y + 0.5 * e, breite - rand, y + zeile - 0.5 * e,
                                 fill=farbe, outline="")
-            lw.create_text(breite / 2, y + zeile / 2, text=text, fill=SCHWARZ,
+            lw.create_text(breite / 2, y + zeile / 2, text=t(text), fill=SCHWARZ,
                            font=self.schrift(min(5.2, zeile / e * 0.62), True))
             y += zeile
 
@@ -312,7 +313,7 @@ class BordFenster(tk.Toplevel):
         punkte = [p for p in check.get("item") or [] if isinstance(p, dict)]
         anzahl = int(d.get("listen") or 0)
         if not anzahl:
-            lw.create_text(breite / 2, hoehe / 2, text="Dieses Flugzeug hat\nkeine Checklisten",
+            lw.create_text(breite / 2, hoehe / 2, text=t("Dieses Flugzeug hat\nkeine Checklisten"),
                            fill=GRAU, font=self.schrift(5), justify="center")
             return
         nr = int(check.get("nr") or 0)
@@ -359,7 +360,7 @@ class BordFenster(tk.Toplevel):
             self.flaechen.append((0, y, breite, y + zeile, lambda n=i: self.hake(n)))
             y += zeile
         if punkte and not offen:
-            lw.create_text(breite / 2, hoehe - 3.5 * e, text="LISTE FERTIG  >", fill=GRUEN,
+            lw.create_text(breite / 2, hoehe - 3.5 * e, text=t("LISTE FERTIG  >"), fill=GRUEN,
                            font=self.schrift(4, True))
 
     def waehle(self, schritt, anzahl):

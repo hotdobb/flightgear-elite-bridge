@@ -19,6 +19,8 @@ import time
 import tkinter as tk
 import urllib.request
 
+from elite_sprache import t
+
 URL = "http://127.0.0.1:8080/json/elite/gps?d=4"
 URL_SETZEN = "http://127.0.0.1:8080/json/"
 FG_TYP = {"apt": "airport", "vor": "vor", "ndb": "ndb"}
@@ -397,7 +399,7 @@ class GpsFenster(tk.Toplevel):
 
         def text(spalte, zeile, inhalt, farbe=BERNSTEIN, s="g", anker="w"):
             teile.append(("T", spalte, zeile, "s" if farbe == SCHWARZ else "b", s, anker,
-                          inhalt))
+                          t(inhalt)))
 
         def balken(zeile):
             teile.append(("B", zeile))
@@ -534,7 +536,7 @@ class GpsFenster(tk.Toplevel):
         massstab = (min(x1 - x0, y1 - y0) / 2 - 20 * f) / radius_nm   # Pixel pro NM
         if not daten:
             teile.append(("X", mx, my, "#6f93b5", 16 * f, 1, "center",
-                          "keine Daten von FlightGear"))
+                          t("keine Daten von FlightGear")))
             return teile
         lat0, lon0 = daten["lat"], daten["lon"]
         trk = daten.get("trk-deg") or 0
@@ -611,7 +613,7 @@ class GpsFenster(tk.Toplevel):
                            font=("Segoe UI", -26 if len(beschriftung) == 1 else -18, "bold"))
             self.flaechen.append((bx0, by0, bx1, by0 + 60, name))
         lw.create_text(x0 + 12, y1 - 12, anchor="sw", fill="#6f93b5", font=("Segoe UI", -15),
-                       text=f"{'NORDEN OBEN' if self.nord_oben else 'FLUGRICHTUNG OBEN'}   "
+                       text=f"{t('NORDEN OBEN') if self.nord_oben else t('FLUGRICHTUNG OBEN')}   "
                             f"Radius {radius_nm} NM")
 
 

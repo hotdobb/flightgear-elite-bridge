@@ -39,6 +39,7 @@ C172P support exists.
 - **Fixes for two Seneca bugs** (applied by "Einrichten", originals kept as `.original`):
   right propeller governor factor 0.1 instead of 1.0 (right engine would not start),
   missing sound conditions for the HSI/turn coordinator gyros.
+- **English or German** user interface (bridge window, GPS screen, status page).
 
 ## Requirements
 
@@ -56,10 +57,10 @@ C172P support exists.
 2. Start FlightGear once (the launcher is enough), install the Seneca II and start it
    once.
 3. Double-click **`bruecke-fenster.cmd`**. The bridge window opens.
-4. Tab **Start** → **Erweitert** → **Einrichten**. This copies the protocol files into
+4. Tab **Start** → **Advanced** → **Set up**. This copies the protocol files into
    FlightGear, fixes the Seneca bugs and creates the Seneca Elite cockpit.
-5. Tab **Achsen kalibrieren**: calibrate the levers, yoke and pedals.
-6. Tab **Start** → **FlightGear starten**.
+5. Tab **Calibrate axes**: calibrate the levers, yoke and pedals.
+6. Tab **Start** → **Start FlightGear**.
 
 ## Status and what is missing
 
@@ -68,8 +69,9 @@ with the Century III autopilot (APR mode) down to a hand-flown landing.
 
 Not finished — **contributions are welcome**:
 
-- The user interface and the code comments are **German only**. An English UI was
-  planned (switchable EN/DE) but is not done yet.
+- The code and its comments are in **German**. The user interface is English by default
+  and can be switched to German (Start → Advanced → Language / Sprache); some rare
+  messages may still be German.
 - Linux support (udev rules, `libftd2xx.so`) is untested.
 - Not yet verified on the hardware: marker beacon lamp order, autopilot TRIM lamp,
   INSTR key, NAV (VOR) and BC modes, CWS and push-to-talk on the yoke.
@@ -85,7 +87,8 @@ Not finished — **contributions are welcome**:
 | `elite_rohdaten.py` | FTDI access and protocol decoder |
 | `elite_avionik.py`, `elite_bord.py` | AP-3000 displays and lamps |
 | `elite_gps.py` | Apollo GPS screen |
-| `elite_einrichten.py` | setup ("Einrichten") |
+| `elite_einrichten.py` | setup ("Set up") |
+| `elite_sprache.py` | English/German texts of the user interface |
 | `seneca_elite.py`, `elite_innen.py` | Seneca Elite cockpit, 2D panel, interior |
 | `elite.xml`, `elite_aus.xml` | FlightGear generic protocol (input/output) |
 | `fg-addon/` | FlightGear add-on |

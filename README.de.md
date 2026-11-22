@@ -40,6 +40,7 @@ C172P gibt es einen Teil davon.
 - **Korrektur zweier Seneca-Fehler** (macht „Einrichten“, Originale bleiben als
   `.original`): Propellerregler rechts mit Faktor 0,1 statt 1,0 (rechter Motor sprang
   nicht an), fehlende Sound-Bedingungen der Kreisel von HSI und Wendezeiger.
+- **Englische oder deutsche** Oberfläche (Brückenfenster, GPS-Bildschirm, Bordcomputer).
 
 ## Voraussetzungen
 
@@ -57,10 +58,12 @@ C172P gibt es einen Teil davon.
 2. FlightGear einmal starten (der Launcher genügt), die Seneca II installieren und einmal
    damit starten.
 3. **`bruecke-fenster.cmd`** doppelklicken. Das Brückenfenster öffnet sich.
-4. Reiter **Start** → **Erweitert** → **Einrichten**. Das kopiert die Protokolldateien
+4. Oberfläche auf Deutsch stellen: Reiter **Start** → **Advanced** → **Language /
+   Sprache** → Deutsch, Fenster schliessen und neu öffnen.
+5. Reiter **Start** → **Erweitert** → **Einrichten**. Das kopiert die Protokolldateien
    nach FlightGear, korrigiert die Seneca-Fehler und erzeugt das Seneca-Elite-Cockpit.
-5. Reiter **Achsen kalibrieren**: Hebel, Horn und Pedale kalibrieren.
-6. Reiter **Start** → **FlightGear starten**.
+6. Reiter **Achsen kalibrieren**: Hebel, Horn und Pedale kalibrieren.
+7. Reiter **Start** → **FlightGear starten**.
 
 ## Stand und was noch fehlt
 
@@ -69,8 +72,9 @@ dem Century-III-Autopiloten (Modus APR) bis zur Landung von Hand.
 
 Nicht fertig, **Mithilfe ist willkommen**:
 
-- Bedienfenster und Kommentare im Code sind **nur Deutsch**. Ein umschaltbares
-  Bedienfenster (EN/DE) war geplant, ist aber noch nicht gebaut.
+- Code und Kommentare sind **Deutsch**. Die Oberfläche ist beim ersten Start Englisch und
+  lässt sich auf Deutsch umstellen (Start → Erweitert → Language / Sprache); einzelne
+  seltene Meldungen können noch deutsch sein.
 - Linux (udev-Regeln, `libftd2xx.so`) ist nicht getestet.
 - Am Gerät noch nicht geprüft: Reihenfolge der Marker-Lampen, TRIM-Lampe des Autopiloten,
   INSTR-Taste, Modi NAV (VOR) und BC, CWS und Sprechtaste am Horn.
@@ -87,6 +91,7 @@ Nicht fertig, **Mithilfe ist willkommen**:
 | `elite_avionik.py`, `elite_bord.py` | Anzeigen und Lampen des AP-3000 |
 | `elite_gps.py` | Apollo-GPS-Bildschirm |
 | `elite_einrichten.py` | Einrichten |
+| `elite_sprache.py` | englische/deutsche Texte der Oberfläche |
 | `seneca_elite.py`, `elite_innen.py` | Seneca-Elite-Cockpit, 2D-Panel, Innenraum |
 | `elite.xml`, `elite_aus.xml` | FlightGear-Generic-Protokoll (Eingang/Ausgang) |
 | `fg-addon/` | FlightGear-Add-on |
