@@ -398,6 +398,10 @@ class Fenster:
                 fenster.setze_platz(feld_platz(feld))
 
     def starte_bruecke(self):
+        # Navi und Bordcomputer wieder oeffnen, wenn sie beim Stoppen offen waren
+        if getattr(self, "navi_war_offen", False) and not self.navi_offen():
+            self.gps_umschalten()
+        self.navi_war_offen = False
         if self.faden and self.faden.is_alive():
             return
         self.faden = threading.Thread(target=self.bruecke.lauf, daemon=True)
@@ -405,6 +409,14 @@ class Fenster:
 
     def stoppe_bruecke(self):
         self.bruecke.halt()
+        # ohne Bruecke wirken die Apollo-Tasten nicht: Navi und Bordcomputer mit schliessen
+        self.navi_war_offen = self.navi_offen()
+        if self.navi_war_offen:
+            self.gps_umschalten()
+
+    def navi_offen(self):
+        gps = getattr(self, "gps", None)
+        return gps is not None and gps.winfo_exists()
 
     def laeuft(self):
         return self.faden is not None and self.faden.is_alive()
@@ -1054,6 +1066,8 @@ class Fenster:
         if messagebox.askyesno(t("Elite-Bruecke"), t("Einstellungen speichern und beenden?")):
             self.speichern()
         self.bruecke.halt()
+        if self.navi_offen():
+            self.gps_umschalten()
         if self.faden:
             self.faden.join(timeout=2)
         self.wurzel.destroy()
