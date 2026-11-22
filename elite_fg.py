@@ -87,7 +87,9 @@ SCHALTER = [
     ("radio", aktiv_niedrig(61)),
     ("pitot", aktiv_niedrig(18)),
     ("parkbremse", aktiv_niedrig(42)),
-    ("fahrwerk", lambda s: int(s.get(6) == 127)),  # 127 = Hebel unten
+    # 127 = Hebel unten; solange das Pro Panel nie gemeldet hat: unten (sonst hupt am Boden
+    # die Fahrwerkswarnung bzw. das Fahrwerk faehrt ein)
+    ("fahrwerk", lambda s: int(s.get(6, 127) == 127)),
     ("lima-l", bit(62, 1)),
     ("lima-r", bit(62, 2)),
     ("pumpe-l", bit(16, 1)),
@@ -115,6 +117,8 @@ SCHALTER = [
     ("cws", aktiv_niedrig(21)),
 ]
 SCHALTER_CODES = {60, 61, 18, 42, 6, 62, 16, 25, 24, 41, 17, 7, 43, 4, 5, 63, 73, 20, 21}
+# Hebel, deren letzte Stellung gilt, wenn das Pro Panel ausgeschaltet wird (Fahrwerk)
+BEHALTEN = {6}
 # Namen fuer den Schalter-Test im Bedienfenster
 GERAETE_NAMEN = {PRO_PANEL: "Pro Panel", PEDALE: "Pedale", AP3000: "AP-3000"}
 CODE_NAMEN = {
@@ -222,7 +226,10 @@ class Entpreller:
         for code in SCHALTER_CODES:
             wert = roh.get((PRO_PANEL, code))
             if wert is None:
-                self.stabil.pop(code, None)
+                # Pro Panel aus (Schluessel) oder getrennt: Schalter gelten als aus, der
+                # Fahrwerkshebel bleibt aber stehen, wo er war
+                if code not in BEHALTEN:
+                    self.stabil.pop(code, None)
                 self.kandidat.pop(code, None)
                 continue
             alt, seit = self.kandidat.get(code, (None, jetzt))
