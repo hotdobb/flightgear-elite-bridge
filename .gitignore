@@ -17,3 +17,6 @@ _tmp/
 # Python
 __pycache__/
 *.pyc
+
+# Bilder fuer die README
+!docs/*.jpg

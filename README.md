@@ -6,6 +6,10 @@ A bridge that connects **Elite flight simulator hardware** to **FlightGear 2024.
 without the Elite driver DLLs. It talks to the devices directly over their FTDI USB
 chip, so it can later run on Linux as well.
 
+![Home cockpit with Elite Pro Panel II, rudder pedals and AP-3000, running FlightGear](docs/cockpit.jpg)
+
+*The author's home cockpit: Elite Pro Panel II with yoke and King Air power quadrant, rudder pedals, AP-3000 avionics panel, the 2D instrument panel with the Apollo GPS on a touch monitor, and FlightGear behind.*
+
 > **Unofficial project.** It is not made, endorsed or supported by the manufacturer of
 > the Elite hardware. "Elite" and the product names are trademarks of their owners.
 > The device protocol was worked out by observing the hardware, for interoperability.

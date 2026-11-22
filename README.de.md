@@ -6,6 +6,10 @@ Eine Brücke, die **Elite-Flugsimulator-Hardware** mit **FlightGear 2024.1** ver
 ohne die DLLs des Elite-Treibers. Sie spricht direkt über den FTDI-USB-Chip mit den
 Geräten und kann darum später auch unter Linux laufen.
 
+![Heimcockpit mit Elite Pro Panel II, Pedalen und AP-3000 an FlightGear](docs/cockpit.jpg)
+
+*Das Heimcockpit des Autors: Elite Pro Panel II mit Horn und Leistungshebeln, Pedale, AP-3000, das 2D-Instrumentenbrett mit Apollo-GPS auf einem Touch-Monitor und dahinter FlightGear.*
+
 > **Inoffizielles Projekt.** Es stammt nicht vom Hersteller der Elite-Hardware und wird
 > von ihm weder unterstützt noch betreut. „Elite“ und die Produktnamen sind Marken ihrer
 > Inhaber. Das Geräteprotokoll wurde durch Beobachten der Hardware ermittelt, damit sie
